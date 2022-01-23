@@ -1,27 +1,52 @@
-CustomPreviewMatlab := proc(inputString) local MatlabString,modifiedString,expression;
+matlab_function_replacement_list := [["asin","arcsin"]
+                                    ,["acos","arccos"]
+                                    ,["atan","arctan"]
+                                    ,["asec","arcsin"]
+                                    ,["acsc","arccsc"]
+                                    ,["acot","arccot"]
+                                   #  These are not currently necessary
+                                   #  due to the substitutions above.
+                                   #,["asinh","arcsinh"]
+                                   #,["acosh","arccosh"]
+                                   #,["atanh","arctanh"]
+                                   #,["asech","arcsinh"]
+                                   #,["acsch","arccsch"]
+                                   #,["acoth","arccoth"]
+                                    ,["nchoosek","binomial"]
+                                    ,["log","ln"]];
 
-    if inputString = "" then
-        return ""
-    end if:
+MatlabExpressionParse := proc(inputString) local modifiedString;
+    modifiedString:=StringTools:-Trim(inputString):
 
-    MatlabString := Matlab:-FromMatlab(inputString, string=true );
-    modifiedString := StringTools:-SubstituteAll(MatlabString,"evalhf","");
-    expression := parse(modifiedString);
-    #expression := InertForm:-Parse(modifiedString);
-    #expression := InertForm:-Value(%);
-    %;
-    return MathML:-ExportPresentation(%);#expression);
+    for item in function_replacement_list do
+        modifiedString := 
+             StringTools:-SubstituteAll(modifiedString,item[1],item[2]):
+    end do:
 
+    return modifiedString;
 end proc;
 
+CustomPreviewMatlab := proc(inputString) local expression;
+    if inputString = "" then
+        return ""
+    end if;
+    expression := MatlabExpressionParse(inputString):
+    if evalb(StringTools:-Search("binomial",expression)>0) then
+        expression := StringTools:-SubstituteAll(expression,"binomial","C")
+    end if;
+    expression := InertForm:-Parse(expression);
+    expression := InertForm:-Value(expression);
+    return InertForm:-ToMathML(expression);
+end proc;
 
 libraryname := "PreviewMatlabExpression.lib";
 march('create',libraryname):
-savelib('CustomPreviewMatlab',libraryname);
+savelib('MatlabExpressionParse'
+       ,'CustomPreviewMatlab'
+       ,'FunctionR'
+       ,'matlab_function_replacement_list'
+       ,libraryname);
 
-libraryname := "PreviewMatlabMatrix.lib";
-march('create',libraryname):
-savelib('CustomPreviewMatlab',libraryname);
 
 #To use add the following to the Custom Preview:
 #     Message := CustomPreviewMatlab("$RESPONSE"); printf(Message);
