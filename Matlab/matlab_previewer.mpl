@@ -18,7 +18,7 @@ matlab_function_replacement_list := [["asin","arcsin"]
 MatlabExpressionParse := proc(inputString) local modifiedString;
     modifiedString:=StringTools:-Trim(inputString):
 
-    for item in function_replacement_list do
+    for item in matlab_function_replacement_list do
         modifiedString := 
              StringTools:-SubstituteAll(modifiedString,item[1],item[2]):
     end do:
@@ -26,17 +26,24 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     return modifiedString;
 end proc;
 
-CustomPreviewMatlab := proc(inputString) local expression;
+CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabString;
     if inputString = "" then
         return ""
     end if;
-    expression := MatlabExpressionParse(inputString):
-    if evalb(StringTools:-Search("binomial",expression)>0) then
-        expression := StringTools:-SubstituteAll(expression,"binomial","C")
+    if evalf(StringTools:-Search("[",inputString)>0) then
+        MatlabString := Matlab:-FromMatlab(inputString, string = true); 
+        modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", ""); 
+        expression := parse(modifiedString);
+        return MathML:-ExportPresentation(%); 
+    else
+        expression := MatlabExpressionParse(inputString):
+        if evalb(StringTools:-Search("binomial",expression)>0) then
+            expression := StringTools:-SubstituteAll(expression,"binomial","C")
+        end if;
+        expression := InertForm:-Parse(expression);
+        expression := InertForm:-Value(expression);
+        return InertForm:-ToMathML(expression)
     end if;
-    expression := InertForm:-Parse(expression);
-    expression := InertForm:-Value(expression);
-    return InertForm:-ToMathML(expression);
 end proc;
 
 libraryname := "PreviewMatlabExpression.lib";
@@ -59,7 +66,8 @@ savelib('MatlabExpressionParse'
 quit;
 
 TestExpressions :=
-   ["[1,1,2]","[1 sqrt(2), pi]","1,1,1","sin(x)"];
+   ["[1,1,2]","[1 sqrt(2), pi]","1,1,1","sin(x)"
+   ,"asin(x)","asin(x)"];
 
 #======================================================================
 #======================================================================
