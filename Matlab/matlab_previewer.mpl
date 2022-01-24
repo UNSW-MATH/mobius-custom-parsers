@@ -50,7 +50,6 @@ libraryname := "PreviewMatlabExpression.lib";
 march('create',libraryname):
 savelib('MatlabExpressionParse'
        ,'CustomPreviewMatlab'
-       ,'FunctionR'
        ,'matlab_function_replacement_list'
        ,libraryname);
 
@@ -61,13 +60,13 @@ savelib('MatlabExpressionParse'
 
 
 #======================================================================
-# Uncomment 'quit;' to run the tests below
+# Comment out 'quit;' to run the tests below
 #======================================================================
 quit;
 
 TestExpressions :=
    ["[1,1,2]","[1 sqrt(2), pi]","1,1,1","sin(x)"
-   ,"asin(x)","asin(x)"];
+   ,"asin(x)","asinh(x)"];
 
 #======================================================================
 #======================================================================
