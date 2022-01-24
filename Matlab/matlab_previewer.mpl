@@ -15,7 +15,10 @@ matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["nchoosek","binomial"]
                                     ,["log","ln"]];
 
-MatlabExpressionParse := proc(inputString) local modifiedString;
+# Modify the matlab string to replace matlab functions
+# with standard Maple funcitons.
+#   
+MatlabStringModify := proc(inputString) local modifiedString;
     modifiedString:=StringTools:-Trim(inputString):
 
     for item in matlab_function_replacement_list do
@@ -24,6 +27,28 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     end do:
 
     return modifiedString;
+end proc;
+
+
+# Parse a string containing a Matlab expression into a Maple object
+MatlabExpressionParse := proc(inputString) local modifiedString;
+    
+    modifiedString := MatlabStringModify(inputString);
+    if evalf(StringTools:-Search("[",inputString)>0) then
+        MatlabString := Matlab:-FromMatlab(inputString, string = true); 
+        modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", ""); 
+        expression := parse(modifiedString);
+    else
+        expression := MatlabStringModify(inputString):
+        if evalb(StringTools:-Search("binomial",expression)>0) then
+            expression := StringTools:-SubstituteAll(expression,"binomial","C")
+        end if;
+        expression := InertForm:-Parse(expression);
+        expression := InertForm:-Value(expression);
+    end if;   
+    
+    return expression;
+    
 end proc;
 
 CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabString;
@@ -36,7 +61,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         expression := parse(modifiedString);
         return MathML:-ExportPresentation(%); 
     else
-        expression := MatlabExpressionParse(inputString):
+        expression := MatlabStringModify(inputString):
         if evalb(StringTools:-Search("binomial",expression)>0) then
             expression := StringTools:-SubstituteAll(expression,"binomial","C")
         end if;
@@ -48,7 +73,8 @@ end proc;
 
 libraryname := "PreviewMatlabExpression.lib";
 march('create',libraryname):
-savelib('MatlabExpressionParse'
+savelib('MatlabStringModify'
+       ,'MatlabExpressionParse'
        ,'CustomPreviewMatlab'
        ,'matlab_function_replacement_list'
        ,libraryname);
@@ -62,10 +88,10 @@ savelib('MatlabExpressionParse'
 #======================================================================
 # Comment out 'quit;' to run the tests below
 #======================================================================
-quit;
+#quit;
 
 TestExpressions :=
-   ["[1,1,2]","[1 sqrt(2), pi]","1,1,1","sin(x)"
+   ["[1;1;2]","[1 sqrt(2), pi]","1,1,1","sin(x)"
    ,"asin(x)","asinh(x)"];
 
 #======================================================================
