@@ -1,3 +1,5 @@
+MatlabPreviewerVersion := proc() return "0.0.1" end proc;
+
 matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["acos","arccos"]
                                     ,["atan","arctan"]
@@ -118,6 +120,7 @@ savelib('MatlabStringModify'
        ,'matlab_function_replacement_list'
        ,'maple_common_function_names'
        ,'decode_common_function_names'
+       ,'MatlabPreviewerVersion'
        ,libraryname);
 
 
