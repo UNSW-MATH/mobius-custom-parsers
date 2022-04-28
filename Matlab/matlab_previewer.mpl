@@ -54,6 +54,10 @@ MatlabStringModify := proc(inputString) local modifiedString;
              StringTools:-SubstituteAll(modifiedString,cat(item,"("),cat(item,"_MAPLE_FUNCTION(")):
     end do:
 
+    # Fix issues with missing brackets around denominators
+    modifiedString := StringTools:-SubstituteAll(modifiedString,"/-","/(-1)/"):
+    modifiedString := StringTools:-SubstituteAll(modifiedString,"*-","*(-1)*"):
+    
     return modifiedString;
 end proc;
 
