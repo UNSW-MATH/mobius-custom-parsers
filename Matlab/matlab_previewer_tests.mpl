@@ -3,8 +3,11 @@ libname := libname,"PreviewMatlabExpression.lib";
 
 TestExpressions :=
    ["[1,1,2]","[1 sqrt(2), pi]","1,1,1"
-   ,"sin(x)","cos(2*x)"
-   ,"asin(x*y)","arcsin(3*x)"];
+   ,"sin(3*x)","cos(2*x)","cosh(2*x+y)","tanh(3*x+5*y)","coth(a*b+c*d)"
+   ,"[sin(3*x),cos(2*x),cosh(2*x+y);tanh(3*x+5*y),coth(a*b+c*d),tan(2*x+d*y)]"
+   ,"asin(x*y)","arcsin(3*x)"
+   ,"nchoosek(3,2)","nchoosek(n,k)"
+   ,"x,y,z"];
 
 #======================================================================
 #======================================================================
