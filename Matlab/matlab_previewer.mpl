@@ -65,13 +65,14 @@ end proc;
 # Parse a string containing a Matlab expression into a Maple object
 MatlabExpressionParse := proc(inputString) local modifiedString;
     
-    modifiedString := MatlabStringModify(inputString);print(%);
+    modifiedString := MatlabStringModify(inputString);
     
     if evalf(StringTools:-Search("[",inputString)>0) then
-        MatlabString := Matlab:-FromMatlab(inputString, string = true); 
+        MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
         modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", "");
         
         expression := parse(modifiedString);
+        expression := %;
     else
         expression := MatlabStringModify(inputString):
         if evalb(StringTools:-Search("binomial",expression)>0) then
