@@ -4,6 +4,8 @@
 
 _Details to be added soon._
 
+Read the "full" documentation [here](./Maple/docs/README.md).
+
 ## Matlab Parser
 
 Running the file `Matlab/matlab_previewer.mpl` using the Maple will generate the files:
