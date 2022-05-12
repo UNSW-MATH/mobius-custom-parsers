@@ -1,4 +1,4 @@
-MatlabPreviewerVersion := proc() return "0.0.1" end proc;
+MatlabPreviewerVersion := proc() return "0.0.2" end proc;
 
 matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["acos","arccos"]
@@ -58,6 +58,11 @@ MatlabStringModify := proc(inputString) local modifiedString;
     modifiedString := StringTools:-SubstituteAll(modifiedString,"/-","/(-1)/"):
     modifiedString := StringTools:-SubstituteAll(modifiedString,"*-","*(-1)*"):
     
+    # Fix issues with the complex number 'i'
+    modifiedString := StringTools:-RegSubs("(^|[^A-Za-z])([0-9]+)i([^A-Za-z]|$)"="\\1\\2*i\\3",modifiedString);
+    modifiedString := StringTools:-RegSubs("(^|[^A-Za-z])([0-9]+)j([^A-Za-z]|$)"="\\1\\2*i\\3",modifiedString);
+    
+    
     return modifiedString;
 end proc;
 
@@ -83,6 +88,7 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     end if;   
     
     expression := decode_common_function_names(expression);
+    expression := eval(%,i=I);
     
     return expression;
     
@@ -100,7 +106,12 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         expression := parse(modifiedString);
         
         expression := decode_common_function_names(expression);
-        return MathML:-ExportPresentation(%); 
+        MathML:-ExportPresentation(%); 
+        
+        Message:=cat("<p align=\"center\">",%,"</p>");
+        
+        return Message;
+        
     else
         expression := MatlabStringModify(inputString):
         if evalb(StringTools:-Search("binomial",expression)>0) then
@@ -110,7 +121,11 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         expression := InertForm:-Value(expression);
         
         expression := decode_common_function_names(expression);
-        return InertForm:-ToMathML(expression)
+        InertForm:-ToMathML(expression);
+        
+        Message:=cat("<p align=\"center\">",%,"</p>");
+        
+        return Message;
     end if;
     
     
