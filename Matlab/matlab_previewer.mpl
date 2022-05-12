@@ -59,8 +59,7 @@ MatlabStringModify := proc(inputString) local modifiedString;
     modifiedString := StringTools:-SubstituteAll(modifiedString,"*-","*(-1)*"):
     
     # Fix issues with the complex number 'i'
-    modifiedString := StringTools:-RegSubs("(^|[^A-Za-z])([0-9]+)i([^A-Za-z]|$)"="\\1\\2*i\\3",modifiedString);
-    modifiedString := StringTools:-RegSubs("(^|[^A-Za-z])([0-9]+)j([^A-Za-z]|$)"="\\1\\2*i\\3",modifiedString);
+    modifiedString := StringTools:-RegSubs("(^|[^A-Za-z])([0-9]+)[ij]([^A-Za-z]|$)"="\\1\\2*i\\3",modifiedString);
     
     
     return modifiedString;
