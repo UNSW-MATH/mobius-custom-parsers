@@ -2,7 +2,8 @@
 libname := libname,"PreviewMatlabExpression.lib";
 
 TestExpressions :=
-   ["[1,1,2]","[1 sqrt(2), pi]","1,1,1"
+   ["a+bi","a+b*i","3+4*I","3+4i","3+4j","B2i"
+   ,"[1,1,2]","[1 sqrt(2), pi]","1,1,1"
    ,"sin(3*x)","cos(2*x)","cosh(2*x+y)","tanh(3*x+5*y)","coth(a*b+c*d)"
    ,"[sin(3*x),cos(2*x),cosh(2*x+y);tanh(3*x+5*y),coth(a*b+c*d),tan(2*x+d*y)]"
    ,"asin(x*y)","arcsin(3*x)"
@@ -29,17 +30,17 @@ printf("</head>\n\n<body>\n");
 printf("<p>");
     printf(StringTools:-FormatTime("%c %Z"));
     printf("");
-    printf("</p><hr><p>");
+    printf("</p><hr>");
 
 for expression_ in TestExpressions do
     printf(cat(expression_,"<br>"));
     Message:=CustomPreviewMatlab(expression_):
     printf(Message);
-    printf("</p><hr><p>");
+    printf("<hr>");
     
 end do:
 
-printf("</p>");
+printf("");
 printf("</body>\n</html>");
 
 writeto(terminal);
