@@ -17,7 +17,8 @@ matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["nchoosek","binomial"]
                                     ,["log","ln"]];
 
-maple_common_function_names := ["arcsin","arccos","arctan","arccsc","arccot","arcsec"
+maple_common_function_names := ["arcsinh","arccosh","arctanh","arccsch","arccoth","arcsech"
+                               ,"arcsin" ,"arccos" ,"arctan" ,"arccsc" ,"arccot" ,"arcsec"
                                ,"sinh","cosh","tanh","csch","coth","sech"
                                ,"sin" ,"cos" ,"tan" ,"csc" ,"cot" ,"sec"
                                ,"log","ln"];
@@ -25,14 +26,18 @@ maple_common_function_names := ["arcsin","arccos","arctan","arccsc","arccot","ar
 decode_common_function_names := proc(inputExpression) local expression;
     expression := inputExpression;
 
-    for item in maple_common_function_names do
-        expression := 
-             subs(
-                 parse(cat(item,"_MAPLE_FUNCTION")) = parse(item)
-                ,expression
-             ):
-    end do:
-    
+    #for item in maple_common_function_names do
+    #    expression := 
+    #         subs(
+    #             parse(cat(item,"_MAPLE_FUNCTION")) = parse(item)
+    #            ,expression
+    #         ):
+    #end do:
+
+    convert(expression,string);
+    StringTools:-SubstituteAll(%,"_MAPLE_FUNCTION","");
+    expression := parse(%);
+
     return expression
 end proc;            
                                     
