@@ -1,4 +1,4 @@
-MatlabPreviewerVersion := proc() return "0.0.2" end proc;
+MatlabPreviewerVersion := proc() return "0.1.0" end proc;
 
 matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["acos","arccos"]
@@ -6,22 +6,44 @@ matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["asec","arcsec"]
                                     ,["acsc","arccsc"]
                                     ,["acot","arccot"]
-                                   #  These are not currently necessary
-                                   #  due to the substitutions above.
-                                   #,["asinh","arcsinh"]
-                                   #,["acosh","arccosh"]
-                                   #,["atanh","arctanh"]
-                                   #,["asech","arcsinh"]
-                                   #,["acsch","arccsch"]
-                                   #,["acoth","arccoth"]
+                                    ,["asinh","arcsinh"]
+                                    ,["acosh","arccosh"]
+                                    ,["atanh","arctanh"]
+                                    ,["asech","arcsinh"]
+                                    ,["acsch","arccsch"]
+                                    ,["acoth","arccoth"]
                                     ,["nchoosek","binomial"]
                                     ,["log","ln"]];
 
+matlab_variable_replacement_list := [["pi","Pi"]
+                                    ,["i","I"]];                               
+                                    
 maple_common_function_names := ["arcsinh","arccosh","arctanh","arccsch","arccoth","arcsech"
                                ,"arcsin" ,"arccos" ,"arctan" ,"arccsc" ,"arccot" ,"arcsec"
                                ,"sinh","cosh","tanh","csch","coth","sech"
                                ,"sin" ,"cos" ,"tan" ,"csc" ,"cot" ,"sec"
                                ,"log","ln"];
+                               
+
+                               
+CheckForMapleNotation := proc(inputString) local item,parsedExpression;
+    for item in matlab_function_replacement_list do
+        if StringTools:-Search(item[2],inputString) > 0 then
+            error "Unknown Matlab function: %1",item[2]
+        end if;
+    end do;
+    
+    parsedExpression := Matlab:-FromMatlab(inputString,string=true);
+    
+    for item in matlab_variable_replacement_list do
+        if StringTools:-Search(cat("m_",item[2]),parsedExpression) > 0 then
+            error "Unknown Matlab variable: %1",item[2]
+        end if;
+    end do;
+    
+    
+end proc;
+
                                
 decode_common_function_names := proc(inputExpression) local expression;
     expression := inputExpression;
@@ -46,6 +68,12 @@ end proc;
 #   
 MatlabStringModify := proc(inputString) local modifiedString;
     modifiedString:=StringTools:-Trim(inputString):
+
+    # Replace Maple specific names with explicitly labelled functions
+    for item in matlab_function_replacement_list do
+        modifiedString := 
+             StringTools:-SubstituteAll(modifiedString,item[2],cat("MAPLE_",item[2])):
+    end do:
 
     # Replace Matlab names function with Maple names
     for item in matlab_function_replacement_list do
@@ -72,26 +100,68 @@ MatlabStringModify := proc(inputString) local modifiedString;
     return modifiedString;
 end proc;
 
+FormatMatlabSyntaxError := proc(ExpressionString,ErrorString)
+   StringTools:-Split(ErrorString,"\n");
+   [%[2],StringTools:-Substitute(%[3],"^","&uarr;")];
+   StringTools:-Join(%,"<br>");
+   StringTools:-SubstituteAll(%," ","&nbsp;");
+   cat("<p>Matlab Syntax Error:</p><p style=font-family:consolas,monospace;color:red>",%,"</p><p>Please check your input.</p>");
+   
+   return %;
+end proc;
+
+FormatMatlabException := proc(ExpressionString,ErrorString)
+   cat(ExpressionString,"<br>",ErrorString);
+   return %;
+end proc;
+
+SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedString,item;
+   Message:=cat("<p style=font-family:consolas,monospace;>",ExpressionString,"</p>");
+   
+   StringTools:-FormatMessage(_rest);
+   cat("<p style=color:red>",%,"</p>");
+   Message:=cat(Message,%);
+   
+   modifiedString:=ExpressionString;
+   for item in matlab_function_replacement_list do
+        modifiedString:=StringTools:-SubstituteAll(modifiedString,item[2],item[1])
+   end do:
+   
+   if modifiedString <> ExpressionString then
+       cat("<p>Did you mean:</p>","<p style=font-family:consolas,monospace;>",modifiedString,"</p>");
+       Message:=cat(Message,%);
+       
+       return Message;
+   end if;
+   
+   for item in matlab_variable_replacement_list do
+        modifiedString:=StringTools:-SubstituteAll(modifiedString,cat("m_",item[2]),item[1])
+   end do:
+      
+   if modifiedString <> ExpressionString then
+       cat("<p>Did you mean:</p>","<p style=font-family:consolas,monospace;>",modifiedString,"</p>");
+       Message:=cat(Message,%);
+       
+       return Message;
+   end if;
+      
+   return Message;
+end proc;
+
 
 # Parse a string containing a Matlab expression into a Maple object
+#   Maple functions will be transated into 'MAPLE_<function_name>' to
+#   allow for optional reparsing.
 MatlabExpressionParse := proc(inputString) local modifiedString;
     
     modifiedString := MatlabStringModify(inputString);
     
-    if evalf(StringTools:-Search("[",inputString)>0) then
-        MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
-        modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", "");
-        
-        expression := parse(modifiedString);
-        expression := %;
-    else
-        expression := MatlabStringModify(inputString):
-        if evalb(StringTools:-Search("binomial",expression)>0) then
-            expression := StringTools:-SubstituteAll(expression,"binomial","C")
-        end if;
-        expression := InertForm:-Parse(expression);
-        expression := InertForm:-Value(expression);
-    end if;   
+    MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
+    modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
+    modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
+      
+    expression := parse(modifiedString);
+    expression := %;
     
     expression := decode_common_function_names(expression);
     expression := eval(%,i=I);
@@ -104,46 +174,50 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     if inputString = "" then
         return ""
     end if;
+
+    try
+    CheckForMapleNotation(inputString);
     
-    if evalf(StringTools:-Search("[",inputString)>0) then
-        expression := MatlabStringModify(inputString):
-        MatlabString := Matlab:-FromMatlab(expression, string = true); 
-        modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", ""); 
-        expression := parse(modifiedString);
-        
-        expression := decode_common_function_names(expression);
-        MathML:-ExportPresentation(%); 
-        
-        Message:=cat("<p align=\"center\">",%,"</p>");
-        
-        return Message;
-        
-    else
-        expression := MatlabStringModify(inputString):
-        if evalb(StringTools:-Search("binomial",expression)>0) then
-            expression := StringTools:-SubstituteAll(expression,"binomial","C")
-        end if;
-        expression := InertForm:-Parse(expression);
-        expression := InertForm:-Value(expression);
-        
-        expression := decode_common_function_names(expression);
-        InertForm:-ToMathML(expression);
-        
-        Message:=cat("<p align=\"center\">",%,"</p>");
-        
-        return Message;
-    end if;
+    expression := MatlabStringModify(inputString):
+    MatlabString := Matlab:-FromMatlab(expression, string = true); 
+    modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", ""); 
+    modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
+    modifiedString := StringTools:-SubstituteAll(%, "m_factorial", "factorial");
+    modifiedString := StringTools:-SubstituteAll(%, "m_binomial", "binomial");
     
+    expression := parse(modifiedString);
     
+    expression := decode_common_function_names(expression);
+    MathML:-ExportPresentation(%); 
     
+    Message:=cat("<p align=\"center\">",%,"</p>");
+        
+    return Message;
+ 
+    catch "on line 1, syntax error":
+        Message := FormatMatlabSyntaxError(inputString,lastexception[2])
+    catch "numeric exception":
+        Message := FormatMatlabException(inputString,lastexception[2])
+    catch "Unknown Matlab":
+        Message := SuggestCorrectMatlabExpression(inputString,lastexception[2..]); 
+    catch:
+        Message:= cat(inputString,"<br>Unexpected Error occured, please contact your course Mobius contact to let them know.<br>If this is a test or exam, please assume your expression is formatted correctly and continue working.");
+    end try;    
+    
+    return Message;   
 end proc;
 
 libraryname := "PreviewMatlabExpression.lib";
 march('create',libraryname):
 savelib('MatlabStringModify'
+       ,'CheckForMapleNotation'
+       ,'SuggestCorrectMatlabExpression'
        ,'MatlabExpressionParse'
+       ,'FormatMatlabSyntaxError'
+       ,'FormatMatlabException'
        ,'CustomPreviewMatlab'
        ,'matlab_function_replacement_list'
+       ,'matlab_variable_replacement_list'
        ,'maple_common_function_names'
        ,'decode_common_function_names'
        ,'MatlabPreviewerVersion'
