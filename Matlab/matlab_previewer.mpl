@@ -201,7 +201,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     catch "Unknown Matlab":
         Message := SuggestCorrectMatlabExpression(inputString,lastexception[2..]); 
     catch:
-        Message:= cat(inputString,"<br>Unexpected Error occured, please contact your course Mobius contact to let them know.<br>If this is a test or exam, please assume your expression is formatted correctly and continue working.");
+        Message:= cat("<p style=font-family:consolas,monospace align=center>",inputString,"</p><p>Unexpected error occured, please take a screenshot and send this to your course M&ouml;bius contact.<br>If this is a test or exam, please assume your expression is formatted correctly and continue working.</p>");
     end try;    
     
     return Message;   
