@@ -66,7 +66,7 @@ end proc;
 # Modify the matlab string to replace matlab functions
 # with standard Maple funcitons.
 #   
-MatlabStringModify := proc(inputString) local modifiedString;
+MatlabStringModify := proc(inputString) local modifiedString,tempString;
     modifiedString:=StringTools:-Trim(inputString):
 
     # Replace Maple specific names with explicitly labelled functions
@@ -86,6 +86,17 @@ MatlabStringModify := proc(inputString) local modifiedString;
         modifiedString := 
              StringTools:-SubstituteAll(modifiedString,cat(item,"("),cat(item,"_MAPLE_FUNCTION(")):
     end do:
+
+    # Fix issues with the repeated operators like '+-' and '++' being careful to preserve space
+    tempString := "";
+    while tempString <> modifiedString do:
+        tempString := modifiedString;
+        
+        modifiedString := StringTools:-RegSubs("\\+([[:space:]]*)\\+"="+\\1",modifiedString):
+        modifiedString := StringTools:-RegSubs("\\+([[:space:]]*)-"  ="-\\1",modifiedString):
+        modifiedString := StringTools:-RegSubs("-([[:space:]]*)\\+"  ="-\\1",modifiedString):
+        modifiedString := StringTools:-RegSubs("-([[:space:]]*)-"    ="+\\1",modifiedString):
+    end do;
 
     # Fix issues with missing brackets around denominators
     modifiedString := StringTools:-SubstituteAll(modifiedString,"/-","/(-1)/"):
