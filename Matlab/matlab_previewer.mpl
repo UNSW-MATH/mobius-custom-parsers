@@ -1,4 +1,4 @@
-MatlabPreviewerVersion := proc() return "0.1.0" end proc;
+MatlabPreviewerVersion := proc() return "0.1.1" end proc;
 
 matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["acos","arccos"]
