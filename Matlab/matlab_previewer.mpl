@@ -111,7 +111,7 @@ FormatMatlabSyntaxError := proc(ExpressionString,ErrorString)
 end proc;
 
 FormatMatlabException := proc(ExpressionString,ErrorString)
-   cat(ExpressionString,"<br>",ErrorString);
+   cat("<p style=font-family:consolas,monospace;color:red>",ExpressionString,"</p><p>",ErrorString,"</p>");
    return %;
 end proc;
 
@@ -154,20 +154,32 @@ end proc;
 #   allow for optional reparsing.
 MatlabExpressionParse := proc(inputString) local modifiedString;
     
-    modifiedString := MatlabStringModify(inputString);
+    try:
+        modifiedString := MatlabStringModify(inputString);
     
-    MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
-    modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
-    modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
-      
-    expression := parse(modifiedString);
-    expression := %;
+        MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
+        modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
+        modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
+        
+        expression := parse(modifiedString);
+        expression := %;
     
-    expression := decode_common_function_names(expression);
-    expression := eval(%,i=I);
+        expression := decode_common_function_names(expression);
+        expression := eval(%,i=I);
     
-    return expression;
-    
+        if StringTools:-FormatTime("%Y") <= "2022" then
+            convert(expression,string):
+            modifiedString := StringTools:-SubstituteAll(%, "MAPLE_", "");
+            expression := parse(%);
+        end if;
+        
+        return expression;
+    catch:
+        if StringTools:-FormatTime("%Y") <= "2022" then
+            return LegacyMatlabExpressionParse(inputString)
+        end if;
+    end try;
+        
 end proc;
 
 CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabString;
@@ -194,18 +206,57 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         
     return Message;
  
-    catch "on line 1, syntax error":
-        Message := FormatMatlabSyntaxError(inputString,lastexception[2])
     catch "numeric exception":
         Message := FormatMatlabException(inputString,lastexception[2])
     catch "Unknown Matlab":
-        Message := SuggestCorrectMatlabExpression(inputString,lastexception[2..]); 
+        Message := SuggestCorrectMatlabExpression(inputString,lastexception[2..]);
+    catch "this entry is too": 
+        #'too wide','too tall','too wide or too narrow'
+        Message := FormatMatlabException(inputString,"Dimensions of arrays being concatenated are not consistent.")
+    catch "dimension bounds must be the same":
+        Message := FormatMatlabException(inputString,"Matrix dimensions must agree.")
     catch:
-        Message:= cat("<p style=font-family:consolas,monospace align=center>",inputString,"</p><p>Unexpected error occured, please take a screenshot and send this to your course M&ouml;bius contact.<br>If this is a test or exam, please assume your expression is formatted correctly and continue working.</p>");
+        if StringTools:-Search("syntax error",lastexception[2]) > 0 then
+            Message := FormatMatlabSyntaxError(inputString,lastexception[2])
+        else
+            Message:= cat("<p style=font-family:consolas,monospace align=center>",inputString,"</p><p>Unanticpated error occured, please take a screenshot and send this to your course M&ouml;bius contact.<br>If the exception message below does not help you, it means you cannot rely on the preview to tell you if your syntax is correct. Please double-check it.</p>");
+            Message:= cat(Message,"<p style=color:blue> Last reported exception: ", StringTools:-FormatMessage(lastexception[2..]),"</p>");       
+        end if;
     end try;    
     
     return Message;   
 end proc;
+
+
+# The older code for parse a string containing a Matlab expression into a Maple object
+#   This code will be use to attempt parsing the code when the updated version fails.
+LegacyMatlabExpressionParse := proc(inputString) local modifiedString;
+    
+    modifiedString := MatlabStringModify(inputString);
+    
+    if evalf(StringTools:-Search("[",inputString)>0) then
+        MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
+        modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", "");
+        
+        expression := parse(modifiedString);
+        expression := %;
+    else
+        expression := MatlabStringModify(inputString):
+        if evalb(StringTools:-Search("binomial",expression)>0) then
+            expression := StringTools:-SubstituteAll(expression,"binomial","C")
+        end if;
+        expression := InertForm:-Parse(expression);
+        expression := InertForm:-Value(expression);
+    end if;   
+    
+    expression := decode_common_function_names(expression);
+    expression := eval(%,i=I);
+    
+    return expression;
+    
+end proc;
+
+
 
 libraryname := "PreviewMatlabExpression.lib";
 march('create',libraryname):
@@ -221,6 +272,7 @@ savelib('MatlabStringModify'
        ,'maple_common_function_names'
        ,'decode_common_function_names'
        ,'MatlabPreviewerVersion'
+       ,'LegacyMatlabExpressionParse'
        ,libraryname);
 
 
