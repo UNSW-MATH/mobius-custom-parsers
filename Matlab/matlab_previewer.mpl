@@ -22,6 +22,7 @@ maple_common_function_names := ["arcsinh","arccosh","arctanh","arccsch","arccoth
                                ,"arcsin" ,"arccos" ,"arctan" ,"arccsc" ,"arccot" ,"arcsec"
                                ,"sinh","cosh","tanh","csch","coth","sech"
                                ,"sin" ,"cos" ,"tan" ,"csc" ,"cot" ,"sec"
+                               ,"exp"
                                ,"log","ln"];
                                
 
@@ -170,6 +171,7 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     
         MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
         modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
+        modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
         modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
         
         expression := parse(modifiedString);
@@ -204,6 +206,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     expression := MatlabStringModify(inputString):
     MatlabString := Matlab:-FromMatlab(expression, string = true); 
     modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", ""); 
+    modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
     modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
     modifiedString := StringTools:-SubstituteAll(%, "m_factorial", "factorial");
     modifiedString := StringTools:-SubstituteAll(%, "m_binomial", "binomial");
@@ -230,7 +233,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         if StringTools:-Search("syntax error",lastexception[2]) > 0 then
             Message := FormatMatlabSyntaxError(inputString,lastexception[2])
         else
-            Message:= cat("<p style=font-family:consolas,monospace align=center>",inputString,"</p><p>Unanticpated error occured, please take a screenshot and send this to your course M&ouml;bius contact.<br>If the exception message below does not help you, it means you cannot rely on the preview to tell you if your syntax is correct. Please double-check it.</p>");
+            Message:= cat("<p style=font-family:consolas,monospace align=center>",inputString,"</p><p>Unanticipated error occured, please take a screenshot and send this to your course M&ouml;bius contact.<br>If the exception message below does not help you, it means you cannot rely on the preview to tell you if your syntax is correct. Please double-check it.</p>");
             Message:= cat(Message,"<p style=color:blue> Last reported exception: ", StringTools:-FormatMessage(lastexception[2..]),"</p>");       
         end if;
     end try;    
