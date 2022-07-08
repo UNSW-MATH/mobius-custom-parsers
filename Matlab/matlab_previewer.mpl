@@ -1,4 +1,66 @@
-MatlabPreviewerVersion := proc() return "0.1.1" end proc;
+MatlabPreviewerVersion := proc() return "0.1.2" end proc;
+
+CustomMatlabCompatibility := module() option package; 
+        _export(MatrixApply
+               ,sin_MATLAB  ,cos_MATLAB  ,tan_MATLAB  ,sec_MATLAB  ,cot_MATLAB
+               ,arcsin_MATLAB ,arccos_MATLAB ,arctan_MATLAB ,arcsec_MATLAB ,arccot_MATLAB
+               
+               ,sinh_MATLAB ,cosh_MATLAB ,tanh_MATLAB ,sech_MATLAB ,coth_MATLAB
+               ,arcsinh_MATLAB,arccosh_MATLAB,arctanh_MATLAB,arcsech_MATLAB,arccoth_MATLAB
+               
+               ,exp_MATLAB,ln_MATLAB
+               ,`.`);
+
+     MatrixApply := proc(f,a)
+         if type(a,Matrix) or type(a,Vector) then
+            map(f,a);
+         else
+            f(a)
+         end if;
+     end proc;
+
+     `.` := proc(x,y)
+          if type(x,algebraic) or type(y,algebraic) then
+             if _nrest > 0 then
+                 return `.`(x*y,_rest)
+             else
+                 return x*y
+             end if;
+          else
+             :-`.`(_params[..])
+          end if;
+     end proc;
+  
+     exp_MATLAB := proc(a) MatrixApply(:-`exp`,a) end proc;
+     ln_MATLAB  := proc(a) MatrixApply(:-`log`,a) end proc;
+     
+            
+     sin_MATLAB := proc(a) MatrixApply(:-`sin`,a) end proc;
+     cos_MATLAB := proc(a) MatrixApply(:-`cos`,a) end proc;
+     tan_MATLAB := proc(a) MatrixApply(:-`tan`,a) end proc;
+     sec_MATLAB := proc(a) MatrixApply(:-`sec`,a) end proc;
+     cot_MATLAB := proc(a) MatrixApply(:-`cot`,a) end proc;
+     
+     arcsin_MATLAB := proc(a) MatrixApply(:-`arcsin`,a) end proc;
+     arccos_MATLAB := proc(a) MatrixApply(:-`arccos`,a) end proc;
+     arctan_MATLAB := proc(a) MatrixApply(:-`arctan`,a) end proc;
+     arcsec_MATLAB := proc(a) MatrixApply(:-`arcsec`,a) end proc;
+     arccot_MATLAB := proc(a) MatrixApply(:-`arccot`,a) end proc;
+     
+     sinh_MATLAB := proc(a) MatrixApply(:-`sinh`,a) end proc;
+     cosh_MATLAB := proc(a) MatrixApply(:-`cosh`,a) end proc;
+     tanh_MATLAB := proc(a) MatrixApply(:-`tanh`,a) end proc;
+     sech_MATLAB := proc(a) MatrixApply(:-`sech`,a) end proc;
+     coth_MATLAB := proc(a) MatrixApply(:-`coth`,a) end proc;
+     
+     arcsinh_MATLAB := proc(a) MatrixApply(:-`arcsinh`,a) end proc;
+     arccosh_MATLAB := proc(a) MatrixApply(:-`arccosh`,a) end proc;
+     arctanh_MATLAB := proc(a) MatrixApply(:-`arctanh`,a) end proc;
+     arcsech_MATLAB := proc(a) MatrixApply(:-`arcsech`,a) end proc;
+     arccoth_MATLAB := proc(a) MatrixApply(:-`arccoth`,a) end proc;
+     
+end module:
+
 
 matlab_function_replacement_list := [["asin","arcsin"]
                                     ,["acos","arccos"]
@@ -85,7 +147,7 @@ MatlabStringModify := proc(inputString) local modifiedString,tempString;
     # Protect Maple function names from breaking over elementwise operations inside a matrix
     for item in maple_common_function_names do
         modifiedString := 
-             StringTools:-SubstituteAll(modifiedString,cat(item,"("),cat(item,"_MAPLE_FUNCTION(")):
+             StringTools:-SubstituteAll(modifiedString,cat(item,"("),cat(item,"_MATLAB(")):
     end do:
 
     # Fix issues with the repeated operators like '+-' and '++' being careful to preserve space
@@ -166,6 +228,8 @@ end proc;
 #   allow for optional reparsing.
 MatlabExpressionParse := proc(inputString) local modifiedString;
     
+    with(CustomMatlabCompatibility);
+    
     try:
         modifiedString := MatlabStringModify(inputString);
     
@@ -180,11 +244,15 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
         expression := decode_common_function_names(expression);
         expression := eval(%,i=I);
     
+        convert(%,string):
+        modifiedString := StringTools:-SubstituteAll(%, "m_", "");
+    
         if StringTools:-FormatTime("%Y") <= "2022" then
-            convert(expression,string):
             modifiedString := StringTools:-SubstituteAll(%, "MAPLE_", "");
-            expression := parse(%);
         end if;
+   
+        expression := parse(%);
+        expression := %;
         
         return expression;
     catch:
@@ -200,6 +268,8 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         return ""
     end if;
 
+    with(CustomMatlabCompatibility);
+    
     try
     CheckForMapleNotation(inputString);
     
@@ -210,10 +280,12 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
     modifiedString := StringTools:-SubstituteAll(%, "m_factorial", "factorial");
     modifiedString := StringTools:-SubstituteAll(%, "m_binomial", "binomial");
+    modifiedString := StringTools:-SubstituteAll(%, "m_", "");
     
     expression := parse(modifiedString);
-    
-    expression := decode_common_function_names(expression);
+    #expression := %;
+    # 
+    #expression := decode_common_function_names(expression);
     MathML:-ExportPresentation(%); 
     
     Message:=cat("<p align=\"center\">",%,"</p>");
@@ -279,6 +351,7 @@ libraryname := cat("PreviewMatlabExpression_"
 for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
   march('create',this_libname):
   savelib('MatlabStringModify'
+       ,'CustomMatlabCompatibility'
        ,'CheckForMapleNotation'
        ,'SuggestCorrectMatlabExpression'
        ,'MatlabExpressionParse'
