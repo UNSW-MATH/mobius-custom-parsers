@@ -271,10 +271,14 @@ LegacyMatlabExpressionParse := proc(inputString) local modifiedString;
 end proc;
 
 
+previewerVersion:=MatlabPreviewerVersion();
+libraryname := cat("PreviewMatlabExpression_"
+                  ,StringTools:-SubstituteAll(previewerVersion,".","_")
+                  ,".lib");
 
-libraryname := "PreviewMatlabExpression.lib";
-march('create',libraryname):
-savelib('MatlabStringModify'
+for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
+  march('create',this_libname):
+  savelib('MatlabStringModify'
        ,'CheckForMapleNotation'
        ,'SuggestCorrectMatlabExpression'
        ,'MatlabExpressionParse'
@@ -287,8 +291,8 @@ savelib('MatlabStringModify'
        ,'decode_common_function_names'
        ,'MatlabPreviewerVersion'
        ,'LegacyMatlabExpressionParse'
-       ,libraryname);
-
+       ,this_libname);
+end do;
 
 #To use add the following to the Custom Preview:
 #     Message := CustomPreviewMatlab("$RESPONSE"); printf(Message);
