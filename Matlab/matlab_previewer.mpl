@@ -27,7 +27,11 @@ CustomMatlabCompatibility := module() option package;
                  return x*y
              end if;
           else
-             :-`.`(_params[..])
+             if _nrest > 0 then
+                 return `.`(:-`.`(x,y),_rest)
+             else
+                 return :-`.`(x,y)
+             end if;
           end if;
      end proc;
   
