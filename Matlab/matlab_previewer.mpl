@@ -115,11 +115,18 @@ maple_common_function_names := ["arcsinh","arccosh","arctanh","arccsch","arccoth
                                
 
                                
-CheckForMapleNotation := proc(inputString) local item,parsedExpression;
+CheckForMapleNotation := proc(inputString) local item,parsedExpression,EqualLoc;
 
     if StringTools:-Search("!",inputString)>0 then
         error "Unknown Matlab operator !";
     end if;        
+
+    EqualLoc:=StringTools:-Search("=",inputString);
+    if EqualLoc > 0 then
+      if inputString[EqualLoc..(EqualLoc+1)] <> "==" then
+        error "Unexpected assignment operator, use == for equations.";
+      end if;
+    end if;
 
     for item in matlab_function_replacement_list do
         if StringTools:-Search(item[2],inputString) > 0 then
@@ -347,7 +354,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         
     return Message;
  
-    catch "numeric exception":
+    catch "numeric exception","Unexpected assignment operator":
         Message := FormatMatlabException(inputString,lastexception[2..]);
     catch "previewer warning":
         Message := FormatMatlabWarning(inputString,lastexception[2..]);
