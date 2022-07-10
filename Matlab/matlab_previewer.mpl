@@ -188,8 +188,17 @@ FormatMatlabSyntaxError := proc(ExpressionString,ErrorString)
    return %;
 end proc;
 
-FormatMatlabException := proc(ExpressionString,ErrorString)
-   cat("<p style=font-family:consolas,monospace;color:red>",ExpressionString,"</p><p>",ErrorString,"</p>");
+FormatMatlabException := proc(ExpressionString)
+   cat("<p style=font-family:consolas,monospace;color:red>",ExpressionString,"</p><p>",
+      StringTools:-FormatMessage(_rest)
+      ,"</p>");
+   return %;
+end proc;
+
+FormatMatlabWarning := proc(ExpressionString)
+   cat("<p style=font-family:consolas,monospace;color:blue>",ExpressionString,"</p><p>",
+      StringTools:-FormatMessage(_rest)
+      ,"</p>");
    return %;
 end proc;
 
@@ -287,6 +296,13 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     modifiedString := StringTools:-SubstituteAll(%, "m_", "");
     
     expression := parse(modifiedString);
+    
+    if type(%,Matrix) or type(%,Vector) then
+       if max(ArrayTools:-Size(%))>15 then 
+          error "previewer warning: Array of size %1 too large to preview.",convert(ArrayTools:-Size(%),list);
+       end if;
+    end if;
+    
     #expression := %;
     # 
     #expression := decode_common_function_names(expression);
@@ -297,7 +313,9 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     return Message;
  
     catch "numeric exception":
-        Message := FormatMatlabException(inputString,lastexception[2])
+        Message := FormatMatlabException(inputString,lastexception[2..]);
+    catch "previewer warning":
+        Message := FormatMatlabWarning(inputString,lastexception[2..]);
     catch "Unknown Matlab":
         Message := SuggestCorrectMatlabExpression(inputString,lastexception[2..]);
     catch "this entry is too": 
@@ -361,6 +379,7 @@ for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
        ,'MatlabExpressionParse'
        ,'FormatMatlabSyntaxError'
        ,'FormatMatlabException'
+       ,'FormatMatlabWarning'
        ,'CustomPreviewMatlab'
        ,'matlab_function_replacement_list'
        ,'matlab_variable_replacement_list'
