@@ -116,6 +116,11 @@ maple_common_function_names := ["arcsinh","arccosh","arctanh","arccsch","arccoth
 
                                
 CheckForMapleNotation := proc(inputString) local item,parsedExpression;
+
+    if StringTools:-Search("!",inputString)>0 then
+        error "Unknown Matlab operator !";
+    end if;        
+
     for item in matlab_function_replacement_list do
         if StringTools:-Search(item[2],inputString) > 0 then
             error "Unknown Matlab function: %1",item[2]
@@ -235,6 +240,14 @@ SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedS
    for item in matlab_function_replacement_list do
         modifiedString:=StringTools:-SubstituteAll(modifiedString,item[2],item[1])
    end do:
+   
+   modifiedString := StringTools:-RegSubs("([A-Za-z0-9]+)!"="factorial(\\1)",modifiedString);
+   modifiedString := StringTools:-RegSubs("\\(([^()]+)\\)!"="factorial(\\1)",modifiedString);
+   
+   if StringTools:-Search("!",modifiedString)>0 then
+       cat("<p>Remember to use <span style=font-family:consolas,monospace;>factorial</span> instead of <span style=font-family:consolas,monospace;>!</span>.</p>");
+       Message:=cat(Message,%);
+   end if;
    
    if modifiedString <> ExpressionString then
        cat("<p>Did you mean:</p>","<p style=font-family:consolas,monospace;>",modifiedString,"</p>");
