@@ -9,7 +9,8 @@ CustomMatlabCompatibility := module() option package;
                ,arcsinh_MATLAB,arccosh_MATLAB,arctanh_MATLAB,arcsech_MATLAB,arccoth_MATLAB
                
                ,exp_MATLAB,ln_MATLAB
-               ,`.`);
+               ,`.`
+               ,`~`);
 
      MatrixApply := proc(f,a)
          if type(a,Matrix) or type(a,Vector) then
@@ -34,6 +35,27 @@ CustomMatlabCompatibility := module() option package;
              end if;
           end if;
      end proc;
+     
+     `~` := proc(x,sep,y) local x1,x2,y1,y2;
+         local newargs, operation, i;
+         operation := op(procname);
+       
+         if operation = `+` or operation = `-` then 
+             x1:=ArrayTools:-Size(x)[1]; x2:=ArrayTools:-Size(x)[2];
+             y1:=ArrayTools:-Size(y)[1]; y2:=ArrayTools:-Size(y)[2];
+           
+             if     max(min(x1,y2),min(x2,y1)) > 1 
+                and min(min(x1,y2),min(x1,y1)) = 1 then
+           
+                 return   ArrayTools:-Replicate(x,y1,y2)
+                        + ArrayTools:-Replicate(y,x1,x2);
+             end if;
+         end if;
+
+         newargs := _passed;
+         return :-`~`[operation](newargs);
+     end;
+
   
      exp_MATLAB := proc(a) MatrixApply(:-`exp`,a) end proc;
      ln_MATLAB  := proc(a) MatrixApply(:-`log`,a) end proc;
