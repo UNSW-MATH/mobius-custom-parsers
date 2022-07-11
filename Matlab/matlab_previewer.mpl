@@ -236,7 +236,7 @@ FormatMatlabWarning := proc(ExpressionString)
    return %;
 end proc;
 
-SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedString,item;
+SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedString,item,legacyParse;
    Message:=cat("<p style=font-family:consolas,monospace;>",ExpressionString,"</p>");
    
    StringTools:-FormatMessage(_rest);
@@ -256,13 +256,6 @@ SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedS
        Message:=cat(Message,%);
    end if;
    
-   if modifiedString <> ExpressionString then
-       cat("<p>Did you mean:</p>","<p style=font-family:consolas,monospace;>",modifiedString,"</p>");
-       Message:=cat(Message,%);
-       
-       return Message;
-   end if;
-   
    for item in matlab_variable_replacement_list do
         modifiedString:=StringTools:-SubstituteAll(modifiedString,cat("m_",item[2]),item[1])
    end do:
@@ -270,10 +263,21 @@ SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedS
    if modifiedString <> ExpressionString then
        cat("<p>Did you mean:</p>","<p style=font-family:consolas,monospace;>",modifiedString,"</p>");
        Message:=cat(Message,%);
-       
-       return Message;
    end if;
-      
+    
+   if StringTools:-FormatTime("%Y") <= "2022" then
+       try:
+           #with(CustomMatlabCompatibility):
+       
+           legacyParse:=MatlabExpressionParse(ExpressionString):
+           #MathML:-ExportPresentation(%); 
+           #Message:=cat(Message,"<p>Your expression has been understood as:</p><p align=\"center\">",%,"</p>");
+           
+           Message:=cat(Message,"<p>Your expression might still be accepted as a correct response, but you should try to use standard MATLAB syntax.</p>");
+       catch:
+       end try:
+    end if:
+         
    return Message;
 end proc;
 
