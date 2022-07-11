@@ -273,7 +273,7 @@ SuggestCorrectMatlabExpression := proc(ExpressionString) local Message,modifiedS
            #MathML:-ExportPresentation(%); 
            #Message:=cat(Message,"<p>Your expression has been understood as:</p><p align=\"center\">",%,"</p>");
            
-           Message:=cat(Message,"<p>Your expression might still be accepted as a correct response, but you should try to use standard MATLAB syntax.</p>");
+           Message:=cat(Message,"<p>Your expression might still be accepted as a correct response, it would be safer to use standard MATLAB syntax.</p>");
        catch:
        end try:
     end if:
