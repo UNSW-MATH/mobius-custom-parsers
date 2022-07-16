@@ -9,6 +9,8 @@ CustomMatlabCompatibility := module() option package;
                ,arcsinh_MATLAB,arccosh_MATLAB,arctanh_MATLAB,arcsech_MATLAB,arccoth_MATLAB
                
                ,exp_MATLAB,ln_MATLAB
+               ,sqrt_MATLAB
+
                ,`.`
                ,`~`);
 
@@ -59,6 +61,7 @@ CustomMatlabCompatibility := module() option package;
   
      exp_MATLAB := proc(a) MatrixApply(:-`exp`,a) end proc;
      ln_MATLAB  := proc(a) MatrixApply(:-`log`,a) end proc;
+     sqrt_MATLAB  := proc(a) MatrixApply(:-`sqrt`,a) end proc;
      
             
      sin_MATLAB := proc(a) MatrixApply(:-`sin`,a) end proc;
@@ -111,6 +114,7 @@ maple_common_function_names := ["arcsinh","arccosh","arctanh","arccsch","arccoth
                                ,"sinh","cosh","tanh","csch","coth","sech"
                                ,"sin" ,"cos" ,"tan" ,"csc" ,"cot" ,"sec"
                                ,"exp"
+                               ,"sqrt"
                                ,"log","ln"];
                                
 
