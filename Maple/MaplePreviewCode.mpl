@@ -1,7 +1,7 @@
 # Would've been needed if compiling for Maple TA's old 2015 kernel.
 # libname:="/home/z3099630/.local/maple2015lib";
 
-MaplePreviewerVersion := proc() return "1.0.0" end proc;
+MaplePreviewerVersion := proc() return "1.0.1" end proc;
 
 #####################################################################
 #                                                                   #
@@ -59,16 +59,16 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     InertForm:-Parse(newEXPRESSION);
     RESPONSE:=eval(%,{`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
     
-    RESPONSE:=eval(RESPONSE,{`%+`=`+`});
-    
+    #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
     RESPONSE:=eval(RESPONSE,{`%^`=`^`,`%/`=`/`,`%sqrt`=`sqrt`,`%%exp`=(xx-> e^xx)});
-    
+        
     #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
     Message:=cat(Message,InertForm:-ToMathML(%));
     Message:=StringTools:-SubstituteAll(Message,"%","");
     
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)</mi>"="<mn>\\1</mn>",Message);
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOTNUMBER*([0-9]*)</mi>"="<mn>\\1.\\2</mn>",Message);
+    Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT*([0-9]*)</mi>"="<mn>\\1.\\2</mn>",Message);
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT</mi>"="<mn>\\1.</mn>",Message);
     Message:=StringTools[RegSubs]("<mn>NUMBER([0-9]+)</mn>"="<mn>\\1.</mn>",Message);
     Message:=StringTools[SubstituteAll](Message,"</mn><mo>&InvisibleTimes;</mo><mn>","</mn><mo>&times;</mo><mn>");
@@ -214,13 +214,13 @@ testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_functi
             if evalb(max(StringTools:-Search(["->"],EXPRESSION))>0) then
                 StringTools:-Substitute(EXPRESSION,"->","#");
                 StringTools:-Split(%,"#");
-                Message:=cat(Message,create_MathML(%[1])," \\(\\mapsto\\) ",create_MathML(%[2]));
+                Message:=cat(Message,"<p align=\"center\">",create_MathML(%[1])," \\(\\mapsto\\) ",create_MathML(%[2]),"</p>");
             else
                 MATHML_EXPRESSION:=create_MathML(EXPRESSION);
-                Message:=cat(Message,MATHML_EXPRESSION);
+                Message:=cat(Message,"<p align=\"center\">",MATHML_EXPRESSION,"</p>");
             end if;
         catch:
-            Message:=cat(Message,MathML[ExportPresentation](parse(EXPRESSION)));
+            Message:=cat(Message,"<p align=\"center\">",MathML[ExportPresentation](parse(EXPRESSION)),"</p>");
             
             #Message:=cat(Message,EXPRESSION,"<p><strong>Warning:</strong> Your expression may have syntax error. If advice below doesn't help then please report this to your lecture in charge of maple.</p>");
             #syntax_error:=StringTools:-FormatMessage(lastexception[2..-1]);
@@ -249,10 +249,15 @@ end proc;
 
 library_name_list:=
 [
-     "2020_t2"
+     "2022_t1"
     ,"v9"
+    ,MaplePreviewerVersion()
 ];
-librarynames:=map2(cat,"preview_code_",library_name_list,".lib");
+
+library_name_list:=
+    map(xx->StringTools:-SubstituteAll(xx,".","_"),library_name_list);
+
+librarynames:=map2(cat,"maple_preview_code_",library_name_list,".lib");
 #print(%):
 
 for ii in [op(librarynames),"MapleCustomPreviewer.lib"] do
