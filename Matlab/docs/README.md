@@ -13,7 +13,7 @@ To use the custom parser you just use
 
     MatlabExpressionParse("$RESPONSE")
 
-This will parse the expression, correcting for [known errors in the FromMatlab command](KnownErrorsInFromMatlab.md), and return a Maple object.
+This will parse the expression, correcting for [known issues in the FromMatlab command](KnownIssuesInFromMatlab.md), and return a Maple object.
 
 ## Previewer
 To use add the following to the Custom Preview:
