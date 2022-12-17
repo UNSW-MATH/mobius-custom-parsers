@@ -441,6 +441,6 @@ for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
 end do;
 
 #To use add the following to the Custom Preview:
-#     Message := CustomPreviewMatlab("$RESPONSE"); printf(Message);
+#     Message := CustomPreviewMatlab("$RESPONSE"); printf("%s",Message);
 #
 

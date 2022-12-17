@@ -8,6 +8,8 @@ Read the "full" documentation [here](./Maple/docs/README.md).
 
 ## Matlab Parser
 
+Read the "full" documentation [here](./Matlab/docs/README.md).
+
 Running the file `Matlab/matlab_previewer.mpl` using the Maple will generate the files:
 
 - PreviewMatlabExpression.ind
