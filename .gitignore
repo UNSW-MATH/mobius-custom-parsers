@@ -1,0 +1,12 @@
+# Ignore Library files
+*.ind
+*.lib
+*.zip
+
+# Ignore maple worksheets and html
+*.mw
+*.html
+
+# Ignore screenshots
+*.png
+*.jpg
