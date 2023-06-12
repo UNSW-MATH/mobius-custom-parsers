@@ -8,8 +8,11 @@ PersonalisedFeedback_KeywordArguments := proc({correctAnswerString::string:=NULL
         MessageAsHTML := feedbackProc(_rest);
         if StringTools[DeleteSpace](MessageAsHTML) <> "" then
            FormattedFeedback:= sprintf(`<br></td></tr><tr><th colspan="4" width="50%%">Feedback: </th></tr><tr><td colspan="4" class="part-answer" width="50%%">%s`,MessageAsHTML);
+        else
+           FormattedFeedback:="";
         end if;
-    return cat(sprintf("%s",correctAnswerString),FormattedFeedback); printf(%);
+        
+    return cat(sprintf("%s",correctAnswerString),FormattedFeedback);
     catch:
     end try: 
 
