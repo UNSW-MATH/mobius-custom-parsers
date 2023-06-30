@@ -1,30 +1,35 @@
-# Mobius Custom Parsers
+# Mobius Custom Parsers and UNSW core extensions
+
+These libraries are used by the School of Mathematics and Statistics, 
+UNSW Sydney. The library is in constant state of development and provided
+AS IS WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+## Feeback library
+
+A library to help simplify the process of adding personalised feedback.
+
+Read more complete documentation [here](./ExtensionLibraries/PersonalisedFeedback/README.md).
 
 ## Maple Parser
 
-_Details to be added soon._
+A library for enhancing the default previwer.
 
-Read the "full" documentation [here](./Maple/docs/README.md).
+Read more complete documentation [here](./Maple/docs/README.md).
 
 ## Matlab Parser
 
-Read the "full" documentation [here](./Matlab/docs/README.md).
+A library for parsing and previewing responses entered in Matlab syntax.
 
-Running the file `Matlab/matlab_previewer.mpl` using the Maple will generate the files:
+Read more complete documentation [here](./Matlab/docs/README.md).
 
-- PreviewMatlabExpression.ind
-- PreviewMatlabExpression.lib
-- PreviewMatlabMatrix.ind
-- PreviewMatlabMatrix.lib
+## Known Issues with libraries/Maple repositories
 
-You can combine these into a single `.zip` file and upload them to Mobius in one step. Please note that you probably need to delete the `.ind` and `.lib` files if you are running genrating the files a second time.
+### Answers cannot begin with a hypen (issue MO-9897)
 
-### Testing Matlab example expressions
+Because of the way the libpath variable is set and concatenated with user input
+the correct answer cannot start with a hypen as this combines with a terminating colon
+to create the character sequence `:-` 
+(The (binary member selection operator)[https://www.maplesoft.com/support/help/view.aspx?path=colondash]).
 
-If you uncomment the `quit` command you can also generate the following html file for sanity checking some common example.
-
-- HTML_examples.html
-
-### How to implement this custom parser in a question
-
-_Details to be added soon._
+Adding space before the resposne does not work, so the recommending workaround until this is fixed
+is to surround the answer with parentheses.
