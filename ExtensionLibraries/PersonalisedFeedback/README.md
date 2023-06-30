@@ -1,10 +1,11 @@
 # Personalised Feedback
 
-This library provide a commands `PersonalisedFeedback`.
+This library provides a command `PersonalisedFeedback`.
 
-To use this you can put the following code in the Answer field
+To use this, you can put the following code in the Answer field
 
-    Message:=PersonalisedFeedback("$YourAnswer",feedbackProc,"$RESPONSE")
+    Message:=PersonalisedFeedback("$YourAnswer",feedbackProc,"$RESPONSE");
+    printf("%s",Message)
 
 where `feedbackProc` is a procedure written to process the student `$RESPONSE` 
 and provide custom feedback.

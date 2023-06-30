@@ -1,6 +1,6 @@
 # Mobius Custom Maple Parser
 
-This library was the first library written in this respository and
+This library was the first library written in this repository and
 should be re-written using the techniques learnt from writing the
 other libraries.
 
@@ -29,7 +29,7 @@ reported back to the user.
 Students will also often enter answers which are syntaxically correct, 
 but have a different semantic meaning from what was intended. For example,
 the expression `2(sin(x))` is valid Maple syntax, but is understood as the
-constant `2`, instead of likely inteded `2*sin(x)`.
+constant `2`, instead of likely intended `2*sin(x)`.
 
 These sort of issues must be searched for using custom techniques and 
 reported back as they are found.
