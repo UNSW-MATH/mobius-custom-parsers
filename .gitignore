@@ -5,6 +5,7 @@
 
 # Ignore maple worksheets and html
 *.mw
+*.bak
 *.html
 
 # Ignore screenshots
