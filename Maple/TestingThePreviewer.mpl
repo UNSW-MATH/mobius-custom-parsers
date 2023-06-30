@@ -81,7 +81,7 @@ printf("</p><hr><p>");
 
 
 for expression_ in list_of_expressions_to_test do
-    Message:=testmyexpression(expression_):printf(Message);printf("</p><hr><p>");
+    Message:=testmyexpression(expression_):printf("%s",Message);printf("</p><hr><p>");
 end do:
 
 
