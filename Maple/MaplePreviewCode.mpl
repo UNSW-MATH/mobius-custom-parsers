@@ -1,14 +1,14 @@
 # Would've been needed if compiling for Maple TA's old 2015 kernel.
 # libname:="/home/z3099630/.local/maple2015lib";
 
-MaplePreviewerVersion := proc() return "1.0.1" end proc;
+MaplePreviewerVersion := proc() return "1.0.2" end proc;
 
 #####################################################################
 #                                                                   #
 #####################################################################
 
 common_function_names:=
-    ["exp","ln","log"
+    ["exp","ln","log","abs"
     ,   "sin" ,   "cos" ,   "tan" ,   "cot" ,"sec"
     ,   "sinh",  "cosh" ,   "tanh",   "coth","sech"
     ,"arcsin" ,"arccos" ,"arctan" ,"arccot" ,"arcsec"
@@ -60,9 +60,10 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     RESPONSE:=eval(%,{`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
     
     #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
-    RESPONSE:=eval(RESPONSE,{`%^`=`^`,`%/`=`/`,`%sqrt`=`sqrt`,`%%exp`=(xx-> e^xx)});
-        
-    #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
+    RESPONSE:=eval(RESPONSE,{`%^`=`^`,`%/`=`/`,`%sqrt`=`sqrt`,`%%exp`=(xx-> e^xx),`%%abs`=:-abs});
+    
+    # This resolves a bug in Maple2019 where an expression like 1-(1-1) is previewed as 1-1-1.
+    RESPONSE:=eval(RESPONSE,{`%+`=`+`});
     Message:=cat(Message,InertForm:-ToMathML(%));
     Message:=StringTools:-SubstituteAll(Message,"%","");
     
