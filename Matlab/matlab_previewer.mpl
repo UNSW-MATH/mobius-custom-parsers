@@ -293,37 +293,31 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     
     with(CustomMatlabCompatibility);
     
-    try:
-        modifiedString := MatlabStringModify(inputString);
+    modifiedString := MatlabStringModify(inputString);
+
+    MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
+    modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
+    modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
+    modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
     
-        MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
-        modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
-        modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
-        modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
-        
-        expression := parse(modifiedString);
-        expression := %;
+    expression := parse(modifiedString);
+    expression := %;
+
+    expression := decode_common_function_names(expression);
+    expression := eval(%,i=I);
+
+    convert(%,string):
+    modifiedString := StringTools:-SubstituteAll(%, "m_", "");
+
+    if StringTools:-FormatTime("%Y") <= "2022" then
+        modifiedString := StringTools:-SubstituteAll(%, "MAPLE_", "");
+    end if;
+
+    expression := parse(%);
+    expression := %;
     
-        expression := decode_common_function_names(expression);
-        expression := eval(%,i=I);
+    return expression;
     
-        convert(%,string):
-        modifiedString := StringTools:-SubstituteAll(%, "m_", "");
-    
-        if StringTools:-FormatTime("%Y") <= "2022" then
-            modifiedString := StringTools:-SubstituteAll(%, "MAPLE_", "");
-        end if;
-   
-        expression := parse(%);
-        expression := %;
-        
-        return expression;
-    catch:
-        if StringTools:-FormatTime("%Y") <= "2022" then
-            return LegacyMatlabExpressionParse(inputString)
-        end if;
-    end try;
-        
 end proc;
 
 CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabString;

@@ -1,5 +1,5 @@
 
-libname := libname,"PreviewMatlabExpression.lib";
+libname := libname,"../PreviewMatlabExpression.lib";
 
 TestExpressions :=
    ["1/3i","1+1/2i","1 + 1 / 2i","1+1/2i+i/2"
