@@ -1,7 +1,14 @@
 # Would've been needed if compiling for Maple TA's old 2015 kernel.
 # libname:="/home/z3099630/.local/maple2015lib";
 
-MaplePreviewerVersion := proc() return "1.0.2" end proc;
+MaplePreviewerVersion := proc() return "1.0.3" end proc;
+
+displayVersionNumber:=proc(inputString)
+    VersionNumber:=MaplePreviewerVersion():
+    versionMessage:=sprintf("<p style=\"text-align: right;color: #12b0fd;\" title=\"Contact Joshua Capel (j.capel@unsw.edu.au) to report errors.\">UNSW M&ouml;bius Custom Previewer v%s</p>",VersionNumber):
+
+    return cat(inputString,versionMessage):
+end proc;
 
 #####################################################################
 #                                                                   #
@@ -203,8 +210,10 @@ end proc;
 testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_function_names,common_operators;
 
     Message:=cat("<p><strong>Input Expression</strong>: ",EXPRESSION,"</p>");
+    MessageTail:=displayVersionNumber(""):
+
     if EXPRESSION="" then 
-        return Message
+        return cat(Message,MessageTail);
     end if;
 
     try
@@ -234,7 +243,7 @@ testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_functi
         end try;
         Message:=add_semantic_advice(EXPRESSION,Message) ;
         
-        return Message;
+        return cat(Message,MessageTail);
     catch:
         Message:=cat(Message," <p>Invalid Maple Syntax or input.</p> ");
         
@@ -247,8 +256,8 @@ testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_functi
 
         
         Message:=add_syntax_advice(EXPRESSION,Message):
-        
-        return Message;
+
+        return cat(Message,MessageTail);
     end try;
 end proc;
 
@@ -276,6 +285,7 @@ for ii in [op(librarynames),"MapleCustomPreviewer.lib"] do
     savelib('add_semantic_advice',ii);
     savelib('create_MathML',ii);
     savelib('testmyexpression',ii);
+    savelib('displayVersionNumber',ii);
     #savelib(`&^`,ii);
 end do;
 
