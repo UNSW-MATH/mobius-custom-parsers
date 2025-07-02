@@ -58,7 +58,7 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     
     
     InertForm:-Parse(newEXPRESSION);
-    RESPONSE:=eval(%,{`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
+    RESPONSE:=eval(%,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
     
     #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
     RESPONSE:=eval(RESPONSE,{`%^`=`^`,`%/`=`/`,`%sqrt`=`sqrt`,`%%exp`=(xx-> e^xx),`%%abs`=:-abs});
