@@ -1,4 +1,4 @@
-libpath := libpath,"MapleCustomPreviewer.lib";
+libname := libname,"MapleCustomPreviewer.lib";
 
 interface(quiet=true);
 
