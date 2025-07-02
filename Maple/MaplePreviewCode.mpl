@@ -209,7 +209,7 @@ end proc;
 
 testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_function_names,common_operators;
 
-    Message:=cat("<p><strong>Input Expression</strong>: ",EXPRESSION,"</p>");
+    Message:=cat("<p><strong>Input Expression</strong>: <span style=\"font-family: Consolas, monospace;color:darkred\">",EXPRESSION,"</span></p>");
     MessageTail:=displayVersionNumber(""):
 
     if EXPRESSION="" then 
