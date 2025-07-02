@@ -26,7 +26,8 @@ forbidden_symbols:={"{","}","[","]"};
 create_MathML:=proc(EXPRESSION) local Message; global common_function_names,common_operators;
 
     Message:="":
-    newEXPRESSION:=EXPRESSION;
+    # Capture input in a list (to be fixed before returning)
+    newEXPRESSION:=cat("[",EXPRESSION,"]");
     
     if evalb(max(StringTools:-Search(["Matrix","Vector"],newEXPRESSION))=0) then
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)\\."="\\1DECIMALDOT",newEXPRESSION);
@@ -78,6 +79,9 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     Message:=StringTools[RegSubs]("</mn><mo>&InvisibleTimes;</mo>(<[a-z]+><mn>)"="<\/mn><mo>\\&times;</mo>\\1",Message);
     Message:=StringTools[RegSubs]("(</mn></[a-z]+>)<mo>&InvisibleTimes;</mo>(<[a-z]+><mn>)"="\\1<mo>\\&times;</mo>\\2",Message);
     
+    # Remove the brackets from "listifying" the material
+    mfenced_pattern_to_replace:=StringTools:-RegSub("(<mfenced[^>]*>)",%, "\\1");
+    Message:=StringTools:-Substitute(Message,mfenced_pattern_to_replace,"<mfenced open='' close=''>");
     
     return Message;
 end proc;
@@ -102,19 +106,19 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Messa
         Message:=cat(Message,"<p><strong>Syntax advice:</strong> You probably shouldn't have a semi-colon ';' in your input.</p>");
     end if;
     
-    if e in indets(RESPONSE) then
+    if e in indets([RESPONSE]) then
         Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable e. Remember that the maple notation for the exponential is exp.</p>");
     end if;
     
-    if nops(indets(RESPONSE,'In(anything)'))>0 then
+    if nops(indets([RESPONSE],'In(anything)'))>0 then
         Message:=cat(Message,"<p><strong>Advice:</strong> The name of the natural log is spelt using a lowercase L and lower case N.</p>");
     end if;
     
-    if pi in indets(RESPONSE) then
+    if pi in indets([RESPONSE]) then
         Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable pi. Remember that the maple notation for numerical constant is Pi (capital P).</p>")
     end if;
     
-    if PI in indets(RESPONSE) then
+    if PI in indets([RESPONSE]) then
         Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable PI. Remember that the maple notation for numerical constant is Pi (lower case i).</p>")
     end if;
     
