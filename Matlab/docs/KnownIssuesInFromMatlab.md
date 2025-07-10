@@ -6,7 +6,7 @@
 Parsing `"sin(x+y)"` will result in `sin(x)+sin(y)`.
 
 ### Cause
-The FromMatlab commands return `map[evalhf](sin,(x +~ y))`, if `x` and `y` were defined the `x +~ y` would result in a single object, and this would work. Since `x` and `y` often represent unspecified variables, this fails.
+The FromMatlab commands returns `map[evalhf](sin,(x +~ y))`, if `x` and `y` were defined the `x +~ y` would result in a single object, and this would work. Since `x` and `y` often represent unspecified variables, this fails.
 
 ### Workaround
 This behaviour only affects known functions. To work around this we replace `sin` with `MAPLE_sin` to make sure this doesn't match a known function.
