@@ -1,4 +1,4 @@
-MatlabPreviewerVersion := proc() return "0.1.2" end proc;
+MatlabPreviewerVersion := proc() return "0.1.3" end proc;
 
 CustomMatlabCompatibility := module() option package; 
         _export(MatrixApply
@@ -189,7 +189,7 @@ MatlabStringModify := proc(inputString) local modifiedString,tempString;
     # Protect Maple function names from breaking over elementwise operations inside a matrix
     for item in maple_common_function_names do
         modifiedString := 
-             StringTools:-SubstituteAll(modifiedString,cat(item,"("),cat(item,"_MATLAB(")):
+             StringTools:-SubstituteAll(modifiedString,cat(item,""),cat(item,"_MATLAB")):
     end do:
 
     # Fix issues with the repeated operators like '+-' and '++' being careful to preserve space
