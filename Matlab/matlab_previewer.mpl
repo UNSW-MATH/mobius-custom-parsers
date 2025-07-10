@@ -1,4 +1,4 @@
-MatlabPreviewerVersion := proc() return "0.1.3" end proc;
+MatlabPreviewerVersion := proc() return "1.0.0" end proc;
 
 displayVersionNumber:=proc(inputString)
     VersionNumber:=MatlabPreviewerVersion():
