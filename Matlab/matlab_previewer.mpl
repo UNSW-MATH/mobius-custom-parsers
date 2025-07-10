@@ -1,5 +1,12 @@
 MatlabPreviewerVersion := proc() return "0.1.3" end proc;
 
+displayVersionNumber:=proc(inputString)
+    VersionNumber:=MatlabPreviewerVersion():
+    versionMessage:=sprintf("<p style=\"text-align: right;color: #12b0fd;\" title=\"Contact Joshua Capel (j.capel@unsw.edu.au) to report errors.\">UNSW M&ouml;bius Matlab Previewer v%s</p>",VersionNumber):
+
+    return cat(inputString,versionMessage):
+end proc;
+
 CustomMatlabCompatibility := module() option package; 
         _export(MatrixApply
                ,sin_MATLAB  ,cos_MATLAB  ,tan_MATLAB  ,sec_MATLAB  ,cot_MATLAB
@@ -321,6 +328,9 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
 end proc;
 
 CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabString;
+
+    MessageTail:=displayVersionNumber(""):
+
     if inputString = "" then
         return ""
     end if;
@@ -354,7 +364,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     
     Message:=cat("<p align=\"center\">",%,"</p>");
         
-    return Message;
+    return cat(Message,MessageTail);
  
     catch "numeric exception","Unexpected assignment operator":
         Message := FormatMatlabException(inputString,lastexception[2..]);
@@ -376,7 +386,7 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         end if;
     end try;    
     
-    return Message;   
+    return cat(Message,MessageTail);
 end proc;
 
 
@@ -430,6 +440,7 @@ for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
        ,'maple_common_function_names'
        ,'decode_common_function_names'
        ,'MatlabPreviewerVersion'
+       ,'displayVersionNumber'
        ,'LegacyMatlabExpressionParse'
        ,this_libname);
 end do;
