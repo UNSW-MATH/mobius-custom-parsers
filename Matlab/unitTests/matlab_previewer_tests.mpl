@@ -74,7 +74,7 @@ printf("<p>");
 for expression_ in TestExpressions do
     printf(cat(expression_,"<br>"));
     Message:=CustomPreviewMatlab(expression_):
-    printf(Message);
+    printf("%s",Message);
     printf("<hr>");
     
 end do:
