@@ -49,17 +49,50 @@ CustomMatlabCompatibility := module() option package;
          local newargs, operation, i;
          operation := op(procname);
        
+        (* Replicate Matlab's Array broadcasting for Arrays. Dimesions of Arrays
+           are the same, or 1, then addition can occur. 
+           
+           Only implemented for 2D arrays here. *)
          if operation = `+` or operation = `-` then 
              x1:=ArrayTools:-Size(x)[1]; x2:=ArrayTools:-Size(x)[2];
              y1:=ArrayTools:-Size(y)[1]; y2:=ArrayTools:-Size(y)[2];
            
-             if     max(min(x1,y2),min(x2,y1)) > 1 
-                and min(min(x1,y2),min(x1,y1)) = 1 then
-           
-                 return   ArrayTools:-Replicate(x,y1,y2)
-                        + ArrayTools:-Replicate(y,x1,x2);
+             # Assume a good state until provent otherwise
+             replicateNeeded:=true;  replicatePlan:=[1,1,1,1]:
+
+             if x1 = y1 then 
+                # Do nothing, already compatible
+             elif x1 = 1 and y1 > 1 then
+                #Plan to replicate the first dimesion in the first array
+                replicatePlan[1]:=y1: 
+             elif x1 > 1 and y1 = 1 then
+                #Plan to replicate the first dimesion in the second array
+                replicatePlan[3]:=x1:
+             else
+                # First dimension is not compatible with addition
+                replicateNeeded:=false;
+                error "Arrays have incompatible sizes for this operation.";
              end if;
-         end if;
+
+             if x2 = y2 then 
+                # Do nothing, already compatible
+             elif x2 = 1 and y2 > 1 then
+                #Plan to replicate the second dimesion in the first array
+                replicatePlan[2]:=y2: 
+             elif x2 > 1 and y2 = 1 then
+                #Plan to replicate the second dimesion in the second array
+                replicatePlan[4]:=x2:
+             else
+                # Second dimension is not compatible with addition
+                replicateNeeded:=false;
+                error "Arrays have incompatible sizes for this operation.";
+             end if;
+
+             if replicateNeeded and max(x1,x2,y1,y2) > 1 then
+                 return :-`~`[operation](ArrayTools:-Replicate(<x>,replicatePlan[1],replicatePlan[2])
+                                        ,ArrayTools:-Replicate(<y>,replicatePlan[3],replicatePlan[4]));
+             end if;
+         end if; 
 
          newargs := _passed;
          return :-`~`[operation](newargs);
@@ -378,6 +411,8 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         Message := FormatMatlabException(inputString,"Dimensions of arrays being concatenated are not consistent.")
     catch "dimension bounds must be the same":
         Message := FormatMatlabException(inputString,"Matrix dimensions must agree.")
+    catch "Arrays have incompatible sizes for this operation.":
+        Message := FormatMatlabException(inputString,"Arrays have incompatible sizes for this operation.")
     catch:
         if StringTools:-Search("syntax error",lastexception[2]) > 0 then
             Message := FormatMatlabSyntaxError(inputString,lastexception[2])
