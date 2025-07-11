@@ -3,7 +3,7 @@
 
 MaplePreviewerVersion := proc() return "1.0.3" end proc;
 
-displayVersionNumber:=proc(inputString)
+displayMapleVersionNumber:=proc(inputString)
     VersionNumber:=MaplePreviewerVersion():
     versionMessage:=sprintf("<p style=\"text-align: right;color: #12b0fd;\" title=\"Contact Joshua Capel (j.capel@unsw.edu.au) to report errors.\">UNSW M&ouml;bius Custom Previewer v%s</p>",VersionNumber):
 
@@ -210,7 +210,7 @@ end proc;
 testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_function_names,common_operators;
 
     Message:=cat("<p><strong>Input Expression</strong>: <span style=\"font-family: Consolas, monospace;color:darkred\">",EXPRESSION,"</span></p>");
-    MessageTail:=displayVersionNumber(""):
+    MessageTail:=displayMapleVersionNumber(""):
 
     if EXPRESSION="" then 
         return cat(Message,MessageTail);
@@ -285,7 +285,7 @@ for ii in [op(librarynames),"MapleCustomPreviewer.lib"] do
     savelib('add_semantic_advice',ii);
     savelib('create_MathML',ii);
     savelib('testmyexpression',ii);
-    savelib('displayVersionNumber',ii);
+    savelib('displayMapleVersionNumber',ii);
     #savelib(`&^`,ii);
 end do;
 

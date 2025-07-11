@@ -1,6 +1,6 @@
 MatlabPreviewerVersion := proc() return "1.0.0" end proc;
 
-displayVersionNumber:=proc(inputString)
+displayMatlabVersionNumber:=proc(inputString)
     VersionNumber:=MatlabPreviewerVersion():
     versionMessage:=sprintf("<p style=\"text-align: right;color: #12b0fd;\" title=\"Contact Joshua Capel (j.capel@unsw.edu.au) to report errors.\">UNSW M&ouml;bius Matlab Previewer v%s</p>",VersionNumber):
 
@@ -330,7 +330,7 @@ end proc;
 
 CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabString;
 
-    MessageTail:=displayVersionNumber(""):
+    MessageTail:=displayMatlabVersionNumber(""):
 
     if inputString = "" then
         return ""
@@ -441,7 +441,7 @@ for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
        ,'maple_common_function_names'
        ,'decode_common_function_names'
        ,'MatlabPreviewerVersion'
-       ,'displayVersionNumber'
+       ,'displayMatlabVersionNumber'
        ,'LegacyMatlabExpressionParse'
        ,this_libname);
 end do;
