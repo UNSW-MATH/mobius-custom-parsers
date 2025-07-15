@@ -263,13 +263,13 @@ end proc;
 
 library_name_list:=
 [
-     "2022_t1"
-    ,"v9"
-    ,MaplePreviewerVersion()
+    MaplePreviewerVersion()
 ];
 
 library_name_list:=
-    map(xx->StringTools:-SubstituteAll(xx,".","_"),library_name_list);
+    map(xx->StringTools:-RegSubs("[ .]" = "_",xx),library_name_list);
+library_name_list:=
+    map(xx->StringTools:-RegSubs("[^A-Za-z0-9_-]" = "",xx),library_name_list);
 
 librarynames:=map2(cat,"maple_preview_code_",library_name_list,".lib");
 #print(%):

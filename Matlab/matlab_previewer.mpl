@@ -455,9 +455,12 @@ LegacyMatlabExpressionParse := proc(inputString) local modifiedString;
 end proc;
 
 
-previewerVersion:=MatlabPreviewerVersion();
+StringTools:-RegSubs("[ .]" = "_", MatlabPreviewerVersion());
+StringTools:-RegSubs("[^A-Za-z0-9_-]" = "",%);
+previewerVersion:=%;
+
 libraryname := cat("PreviewMatlabExpression_"
-                  ,StringTools:-SubstituteAll(previewerVersion,".","_")
+                  ,previewerVersion
                   ,".lib");
 
 for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do

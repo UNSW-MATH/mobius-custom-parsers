@@ -25,8 +25,8 @@ unitTests/HTML_examples.html: unitTests/matlab_previewer_tests.mpl \
 	cd unitTests && $(CMAPLE) matlab_previewer_tests.mpl
 
 
-%.zip: %.ind %.lib 
-	zip $*.zip $*.ind $*.lib
+%.zip: %.ind %.lib
+	zip "$*.zip" "$*.ind" "$*.lib"
 
 superclean:
 	rm -f *.ind *.lib *.zip
