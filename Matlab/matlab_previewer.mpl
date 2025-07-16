@@ -18,6 +18,8 @@ CustomMatlabCompatibility := module() option package;
                ,exp_MATLAB,ln_MATLAB
                ,sqrt_MATLAB
 
+               ,fixKnownMatlabtoMapleIssues
+
                ,`.`
                ,`~`);
 
