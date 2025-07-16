@@ -128,6 +128,16 @@ CustomMatlabCompatibility := module() option package;
      arcsech_MATLAB := proc(a) MatrixApply(:-`arcsech`,a) end proc;
      arccoth_MATLAB := proc(a) MatrixApply(:-`arccoth`,a) end proc;
      
+     fixKnownMatlabtoMapleIssues := proc(inputString)
+        modifiedString := StringTools:-SubstituteAll(inputString, "evalhf", "");
+        modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
+        modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
+        modifiedString := StringTools:-SubstituteAll(%, "m_factorial", "factorial");
+        modifiedString := StringTools:-SubstituteAll(%, "m_binomial", "binomial");
+        modifiedString := StringTools:-SubstituteAll(%, "m_", "");
+
+        modifiedString;
+    end proc;
 end module:
 
 
@@ -332,15 +342,15 @@ end proc;
 #   allow for optional reparsing.
 MatlabExpressionParse := proc(inputString) local modifiedString;
     
+    # Loads the compatibilty layer into the global scope
     with(CustomMatlabCompatibility);
     
     modifiedString := MatlabStringModify(inputString);
 
     MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
-    modifiedString := StringTools:-SubstituteAll(%, "evalhf", "");
-    modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
-    modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
-    
+    modifiedString := CustomMatlabCompatibility:-fixKnownMatlabtoMapleIssues(MatlabString);
+
+    # Parses the expression in the context of the global scope
     expression := parse(modifiedString);
     expression := %;
 
@@ -369,20 +379,15 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
         return ""
     end if;
 
+    # Loads the compatibilty layer into the global scope
     with(CustomMatlabCompatibility);
-    
     try
     CheckForMapleNotation(inputString);
-    
     expression := MatlabStringModify(inputString):
     MatlabString := Matlab:-FromMatlab(expression, string = true); 
-    modifiedString := StringTools:-SubstituteAll(MatlabString, "evalhf", ""); 
-    modifiedString := StringTools:-SubstituteAll(%, "evalf", "");
-    modifiedString := StringTools:-SubstituteAll(%, "Matlab_i", "I");
-    modifiedString := StringTools:-SubstituteAll(%, "m_factorial", "factorial");
-    modifiedString := StringTools:-SubstituteAll(%, "m_binomial", "binomial");
-    modifiedString := StringTools:-SubstituteAll(%, "m_", "");
+    modifiedString := CustomMatlabCompatibility:-fixKnownMatlabtoMapleIssues(MatlabString);
     
+    # Parses the expression in the context of the global scope
     expression := parse(modifiedString);
     
     if type(%,Matrix) or type(%,Vector) then
