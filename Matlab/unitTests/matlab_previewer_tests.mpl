@@ -3,6 +3,7 @@ libname := libname,"../PreviewMatlabExpression.lib";
 
 TestExpressions :=
    ["1/3i","1+1/2i","1 + 1 / 2i","1+1/2i+i/2"
+   ,"1,tan([1 2 3]),[1;2;3]"
    ,"(5/7)^x"
    ,"tan([1,2,3])"
    ,"[ 1 1 ] - [ 2 2 ; 2 2 ]"

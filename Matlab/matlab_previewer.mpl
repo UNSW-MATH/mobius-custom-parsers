@@ -136,8 +136,12 @@ CustomMatlabCompatibility := module() option package;
         modifiedString := StringTools:-SubstituteAll(%, "m_binomial", "binomial");
         modifiedString := StringTools:-SubstituteAll(%, "m_", "");
 
+        modifiedString := StringTools:-RegSubs(";$"="",%);
+        modifiedString := StringTools:-SubstituteAll(%, ";", ",");
+
         modifiedString;
     end proc;
+     
 end module:
 
 
@@ -350,6 +354,9 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     MatlabString := Matlab:-FromMatlab(modifiedString, string = true); 
     modifiedString := CustomMatlabCompatibility:-fixKnownMatlabtoMapleIssues(MatlabString);
 
+    # Place the Maple compatible expressions in a list
+    modifiedString := cat("[",modifiedString,"]"):
+
     # Parses the expression in the context of the global scope
     expression := parse(modifiedString);
     expression := %;
@@ -367,7 +374,8 @@ MatlabExpressionParse := proc(inputString) local modifiedString;
     expression := parse(%);
     expression := %;
     
-    return expression;
+    # Return the sequence generated (de-listifying it)
+    return op(expression);
     
 end proc;
 
@@ -381,11 +389,17 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
 
     # Loads the compatibilty layer into the global scope
     with(CustomMatlabCompatibility);
+
     try
     CheckForMapleNotation(inputString);
+
     expression := MatlabStringModify(inputString):
+
     MatlabString := Matlab:-FromMatlab(expression, string = true); 
     modifiedString := CustomMatlabCompatibility:-fixKnownMatlabtoMapleIssues(MatlabString);
+
+    # Place the Maple compatible expressions in a list
+    modifiedString := cat("[",modifiedString,"]"):
     
     # Parses the expression in the context of the global scope
     expression := parse(modifiedString);
@@ -399,10 +413,13 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     #expression := %;
     # 
     #expression := decode_common_function_names(expression);
-    MathML:-ExportPresentation(%); 
     
+    Message:=MathML:-ExportPresentation(%);
+    
+    # Remove the brackets from "listifying" the material
+    mfenced_pattern_to_replace:=StringTools:-RegSub("(<mfenced[^>]*>)",Message, "\\1");
+    Message:=StringTools:-Substitute(Message,mfenced_pattern_to_replace,"<mfenced open='' close=''>");
     Message:=cat("<p align=\"center\">",%,"</p>");
-        
     return cat(Message,MessageTail);
  
     catch "numeric exception","Unexpected assignment operator":
