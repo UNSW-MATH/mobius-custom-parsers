@@ -179,13 +179,6 @@ CheckForMapleNotation := proc(inputString) local item,parsedExpression,EqualLoc;
 
     if StringTools:-Search("!",inputString)>0 then
         error "Unknown Matlab operator !";
-    end if;        
-
-    EqualLoc:=StringTools:-Search("=",inputString);
-    if EqualLoc > 0 then
-      if inputString[EqualLoc..(EqualLoc+1)] <> "==" then
-        error "Unexpected assignment operator, use == for equations.";
-      end if;
     end if;
 
     for item in matlab_function_replacement_list do
@@ -194,7 +187,7 @@ CheckForMapleNotation := proc(inputString) local item,parsedExpression,EqualLoc;
         end if;
     end do;
     
-    parsedExpression := Matlab:-FromMatlab(inputString,string=true);
+    parsedExpression := Matlab:-FromMatlab(fixForgivenSyntaxErrors(inputString),string=true);
     
     for item in matlab_variable_replacement_list do
         if StringTools:-Search(cat("m_",item[2]),parsedExpression) > 0 then
@@ -205,7 +198,22 @@ CheckForMapleNotation := proc(inputString) local item,parsedExpression,EqualLoc;
     
 end proc;
 
-                               
+fixForgivenSyntaxErrors := proc(inputString)
+    return StringTools:-RegSubs("([^=])=([^=])"="\\1==\\2",inputString);
+end proc;
+
+CheckForForgivenSyntaxErrors:=proc(inputString)
+
+    # This will raise and error to be capture and displayed after parsing the expression
+    EqualLoc:=StringTools:-Search("=",inputString);
+    if EqualLoc > 0 then
+      if inputString[EqualLoc..(EqualLoc+1)] <> "==" then
+        error "Warning: Unexpected Matlab assignment operator used. For equations, `==` is preferred over `=`.";
+      end if;
+    end if;
+
+end proc;
+
 decode_common_function_names := proc(inputExpression) local expression;
     expression := inputExpression;
 
@@ -270,6 +278,9 @@ MatlabStringModify := proc(inputString) local modifiedString,tempString;
     # Fix issues with the complex number 'i'
     modifiedString := StringTools:-RegSubs("(^|[^A-Za-z])([0-9]+)[ij]([^A-Za-z]|$)"="\\1\\2*i\\3",modifiedString);
     
+    # Change = to == so FromMatlab can correctly parse as equations
+    modifiedString := fixForgivenSyntaxErrors(modifiedString);
+
     return modifiedString;
 end proc;
 
@@ -422,6 +433,15 @@ CustomPreviewMatlab := proc(inputString) local expression,modifiedString,MatlabS
     mfenced_pattern_to_replace:=StringTools:-RegSub("(<mfenced[^>]*>)",Message, "\\1");
     Message:=StringTools:-Substitute(Message,mfenced_pattern_to_replace,"<mfenced open='' close=''>");
     Message:=cat("<p align=\"center\">",%,"</p>");
+
+    try:
+        CheckForForgivenSyntaxErrors(inputString);
+    catch:
+         Message := cat(Message,"<p>",
+         StringTools:-FormatMessage(lastexception[2..])
+         ,"</p>");
+    end try;
+
     return cat(Message,MessageTail);
  
     catch "numeric exception","Unexpected assignment operator":
@@ -505,10 +525,11 @@ for this_libname in [libraryname,"PreviewMatlabExpression.lib"] do
        ,'MatlabPreviewerVersion'
        ,'displayMatlabVersionNumber'
        ,'LegacyMatlabExpressionParse'
+       ,'CheckForForgivenSyntaxErrors'
+       ,'fixForgivenSyntaxErrors'
        ,this_libname);
 end do;
 
 #To use add the following to the Custom Preview:
 #     Message := CustomPreviewMatlab("$RESPONSE"); printf("%s",Message);
 #
-
