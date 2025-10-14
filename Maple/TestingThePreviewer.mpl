@@ -1,12 +1,13 @@
-libname := libname,"MapleCustomPreviewer.lib";
+libname := libname,"MapleCustomPreviewer.mla";
 
 interface(quiet=true);
 
 list_of_expressions_to_test:=
 [""
+,"<a,b,c>"
 ,"1,2,<2,3>,[1,2]"
 ,"[1,2,<2,3>,[1,2]]"
-,"[ < < a11, a21 > | < a12, a22 > >, < < b11, b21 > | < b12, b22 > > ]"
+,"<<a11,a21>|<a12,a22> >,<<b11,b21>|<b12,b22>>"
 ,"3*sqrt(101)(1-exp(-Pi/10))"
 ,"3*2+3*2"
 ,"3*(2+2)"

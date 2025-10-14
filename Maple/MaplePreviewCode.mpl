@@ -1,7 +1,7 @@
 # Would've been needed if compiling for Maple TA's old 2015 kernel.
 # libname:="/home/z3099630/.local/maple2015lib";
 
-MaplePreviewerVersion := proc() return "1.0.3" end proc;
+MaplePreviewerVersion := proc() return "1.0.4" end proc;
 
 displayMapleVersionNumber:=proc(inputString)
     VersionNumber:=MaplePreviewerVersion():
@@ -209,7 +209,8 @@ end proc;
 
 testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_function_names,common_operators;
 
-    Message:=cat("<p><strong>Input Expression</strong>: <span style=\"font-family: Consolas, monospace;color:darkred\">",EXPRESSION,"</span></p>");
+    Escaped_EXPRESSION:=StringTools:-Escape(EXPRESSION,'html');
+    Message:=cat("<p><strong>Input Expression</strong>: <span style=\"font-family: Consolas, monospace;color:darkred\">",Escaped_EXPRESSION,"</span></p>");
     MessageTail:=displayMapleVersionNumber(""):
 
     if EXPRESSION="" then 
