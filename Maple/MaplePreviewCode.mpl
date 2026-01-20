@@ -272,10 +272,10 @@ library_name_list:=
 library_name_list:=
     map(xx->StringTools:-RegSubs("[^A-Za-z0-9_-]" = "",xx),library_name_list);
 
-librarynames:=map2(cat,"maple_preview_code_",library_name_list,".lib");
+librarynames:=map2(cat,"maple_preview_code_",library_name_list,".mla");
 #print(%):
 
-for ii in [op(librarynames),"MapleCustomPreviewer.lib"] do
+for ii in [op(librarynames),"MapleCustomPreviewer.mla"] do
     #next;
     march('create',ii):
     savelib('MaplePreviewerVersion',ii);
