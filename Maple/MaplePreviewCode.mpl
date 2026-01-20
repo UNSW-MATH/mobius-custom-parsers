@@ -1,7 +1,7 @@
 # Would've been needed if compiling for Maple TA's old 2015 kernel.
 # libname:="/home/z3099630/.local/maple2015lib";
 
-MaplePreviewerVersion := proc() return "1.0.4" end proc;
+MaplePreviewerVersion := proc() return "1.0.5_alpha" end proc;
 
 displayMapleVersionNumber:=proc(inputString)
     VersionNumber:=MaplePreviewerVersion():
@@ -61,8 +61,8 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
         newEXPRESSION:=StringTools:-SubstituteAll(newEXPRESSION,opname,StringTools:-Capitalize(opname));
     end do;
     
-    newEXPRESSION:=StringTools:-SubstituteAll(newEXPRESSION,"Pi","pi");
-    
+    newEXPRESSION:=StringTools:-RegSubs("([^A-Za-z0-9]|^)Pi([^A-Za-z0-9]|$)"="\\1pi\\2",newEXPRESSION);
+    newEXPRESSION:=StringTools:-RegSubs("([^A-Za-z0-9]|^)I([^A-Za-z0-9]|$)"="\\1i\\2",newEXPRESSION);
     
     InertForm:-Parse(newEXPRESSION);
     RESPONSE:=eval(%,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
@@ -114,19 +114,19 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Messa
     end if;
     
     if e in indets([RESPONSE]) then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable e. Remember that the maple notation for the exponential is exp.</p>");
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable e. Remember that the Maple notation for the exponential function is exp; you probably mean exp(1).</p>");
     end if;
     
     if nops(indets([RESPONSE],'In(anything)'))>0 then
-        Message:=cat(Message,"<p><strong>Advice:</strong> The name of the natural log is spelt using a lowercase L and lower case N.</p>");
+        Message:=cat(Message,"<p><strong>Advice:</strong> The name of the natural logarithm is spelt using a lowercase L and lowercase N.</p>");
     end if;
     
     if pi in indets([RESPONSE]) then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable pi. Remember that the maple notation for numerical constant is Pi (capital P).</p>")
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable pi (with a lowercase P). Remember that the Maple notation for numerical constant is Pi (with an uppercase P).</p>")
     end if;
     
     if PI in indets([RESPONSE]) then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable PI. Remember that the maple notation for numerical constant is Pi (lower case i).</p>")
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable PI (with an uppercase I). Remember that the Maple notation for numerical constant is Pi (with a lowercase I).</p>")
     end if;
     
     if evalb(max(StringTools:-Search([")("],EXPRESSION))>0) then

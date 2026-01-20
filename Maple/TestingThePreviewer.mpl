@@ -66,7 +66,12 @@ list_of_expressions_to_test:=
 ,"-1/10*(1+1/(5*x^2)) + (1/10)*(ln(1+1/(5*x^2)))"
 ,"12*sqrt(3)/Pi"
 ,"(sqrt(6)*(arctan(sqrt(6)*x)))/2"
-,"6*x*ln(x^2+8)-12*x+(96/sqrt(8))*arctan(x/sqrt(8))"];
+,"6*x*ln(x^2+8)-12*x+(96/sqrt(8))*arctan(x/sqrt(8))"
+,"-2+3*12*I*z"
+,"3*I"
+,"I*z*exp(1)"
+,"(cos(-2)-cosh(-2))/(-2+4*I)"
+];
 
 writeto("HTML_examples.html");
 
