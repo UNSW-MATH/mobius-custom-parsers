@@ -97,7 +97,7 @@ end proc;
 #                                                                   #
 #####################################################################
 
-add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Message,RESPONSE; global common_function_names; common_operators, common_regex_literal_operators;
+add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Message,RESPONSE,hasBadInfinity; global common_function_names; common_operators, common_regex_literal_operators;
 
     Message:=InputMessage;
     RESPONSE:=parse(EXPRESSION);
@@ -142,7 +142,53 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Messa
     then
         Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains ",m0,", did you mean ",m1,"*",m2,"? Parts of your expression might have vanished.</p>");
     end if;
-    
+
+    hasBadInfinity := proc(stringToCheck) local i,strLen,stringToCheckLowercase;
+        strLen := length(stringToCheck);
+        stringToCheckLowercase := StringTools:-LowerCase(stringToCheck);
+        
+        if evalb(StringTools:-Search("inf", stringToCheckLowercase)=0) then
+            return false
+        end if;
+        
+        if 
+            evalb(strLen < 3) 
+        then 
+            return false
+        elif 
+            evalb(2 < strLen and strLen < 8) 
+        then
+            for i from 1 to strLen do
+                if
+                    evalb(stringToCheckLowercase[i..i+2]="inf")
+                then 
+                    return true 
+                end if 
+            end do
+        else            
+            for i from 1 to strLen-7 do
+                if 
+                    evalb(stringToCheckLowercase[i..i+2]="inf" and stringToCheck[i..i+7]<>"infinity")
+                then
+                    return true
+                end if
+            end do;
+            for i from strLen-6 to strLen-3 do
+                if 
+                    evalb(stringToCheckLowercase[i..i+2]="inf")
+                then
+                    return true;
+                end if;
+                return false;
+            end do; 
+        end if;
+    end proc;
+    if
+        hasBadInfinity(EXPRESSION)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> You may have incorrectly inputted &infin; in your answer. The Maple syntax for &infin; is &quot;infinity&quot; (the whole word, all lowercase letters).</p>");
+    end if;
+
     
     for func_name in common_function_names do
     for regex_literal_op in common_regex_literal_operators do

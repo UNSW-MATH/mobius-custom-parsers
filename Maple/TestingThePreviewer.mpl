@@ -72,8 +72,10 @@ list_of_expressions_to_test:=
 ,"I*z*exp(1)"
 ,"(cos(-2)-cosh(-2))/(-2+4*I)"
 ,"2*pi*i"
+,"infinity"
 ,"infty"
 ,"Infinity"
+,"int(1/(1+x^4),x=-infinity..Infinity);"
 ];
 
 writeto("HTML_examples.html");
