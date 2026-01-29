@@ -122,11 +122,15 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Messa
     end if;
     
     if pi in indets([RESPONSE]) then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable pi (with a lowercase P). Remember that the Maple notation for numerical constant is Pi (with an uppercase P).</p>")
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable pi (with a lowercase P). Remember that the Maple notation for the numerical constant is Pi (with an uppercase P).</p>")
     end if;
     
     if PI in indets([RESPONSE]) then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable PI (with an uppercase I). Remember that the Maple notation for numerical constant is Pi (with a lowercase I).</p>")
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable PI (with an uppercase I). Remember that the Maple notation for the numerical constant is Pi (with a lowercase I).</p>")
+    end if;
+
+    if i in indets([RESPONSE]) then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your answer contains the variable i (with a lowercase I). Remember that the Maple notation for the imaginary unit is I (with an uppercase i).</p>")
     end if;
     
     if evalb(max(StringTools:-Search([")("],EXPRESSION))>0) then

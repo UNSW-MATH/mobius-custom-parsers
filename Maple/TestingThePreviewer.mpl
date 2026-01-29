@@ -71,6 +71,9 @@ list_of_expressions_to_test:=
 ,"3*I"
 ,"I*z*exp(1)"
 ,"(cos(-2)-cosh(-2))/(-2+4*I)"
+,"2*pi*i"
+,"infty"
+,"Infinity"
 ];
 
 writeto("HTML_examples.html");
