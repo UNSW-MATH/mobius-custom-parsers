@@ -64,6 +64,136 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     newEXPRESSION:=StringTools:-RegSubs("([^A-Za-z0-9]|^)Pi([^A-Za-z0-9]|$)"="\\1pi\\2",newEXPRESSION);
     newEXPRESSION:=StringTools:-RegSubs("([^A-Za-z0-9]|^)I([^A-Za-z0-9]|$)"="\\1i\\2",newEXPRESSION);
     
+    #"Parse" `Matrix` expressions
+    S_marker := StringTools[Search]("Matrix(",newEXPRESSION);
+    bail := 0;
+    while S_marker>0 and bail<5 do
+		parenTier := 1;
+		for i from S_marker+7 to length(newEXPRESSION) do
+			if evalb(newEXPRESSION[i] = "(") then
+				parenTier += 1
+			elif evalb(newEXPRESSION[i] = ")") then
+				parenTier -= 1;
+				if evalb(parenTier = 0) then
+					E_marker	:= i;
+					matString	:= newEXPRESSION[S_marker+7..E_marker-1];
+					break
+				end if
+			end if
+		end do;
+		if evalb(parenTier > 0) then break end if;
+		matString 	:= StringTools[DeleteSpace](matString);
+		B_marker 	:= StringTools[Search]("[[",matString);
+		if evalb(B_marker>0) then
+			matString	:= matString[B_marker..-1];
+			parenTier := 0;
+			for i from 1 to length(matString) do
+				if evalb(matString[i] = "[") then
+					parenTier += 1;
+					matString := StringTools[Insert](matString,i,"<");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "]") then
+					parenTier -= 1;
+					matString := StringTools[Insert](matString,i,">");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "," and parenTier = 2) then
+					matString := StringTools[Insert](matString,i,"|");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "(") then parenTier += 1
+				elif evalb(matString[i] = ")") then parenTier -= 1
+				end if
+			end do;
+			newEXPRESSION 	:= cat(newEXPRESSION[1..S_marker-1],matString,newEXPRESSION[E_marker+1..-1]);
+		else break end if;
+		if evalb(parenTier <> 0) then break end if;
+		S_marker 		:= StringTools[Search]("Matrix(",newEXPRESSION);
+		bail			+= 1
+    end do;
+    #"Parse" `Vector` expressions
+    S_marker := StringTools[Search]("Vector[column](",newEXPRESSION);
+    bail := 0;
+    while S_marker>0 and bail<5 do
+		parenTier := 1;
+		for i from S_marker+15 to length(newEXPRESSION) do
+			if evalb(newEXPRESSION[i] = "(") then
+				parenTier += 1
+			elif evalb(newEXPRESSION[i] = ")") then
+				parenTier -= 1;
+				if evalb(parenTier = 0) then
+					E_marker	:= i;
+					matString	:= newEXPRESSION[S_marker+15..E_marker-1];
+					break
+				end if
+			end if
+		end do;
+		if evalb(parenTier > 0) then break end if;
+		matString 	:= StringTools[DeleteSpace](matString);
+		B_marker 	:= StringTools[Search]("[",matString);
+		if evalb(B_marker>0) then
+			matString	:= matString[B_marker..-1];
+			parenTier := 0;
+			for i from 1 to length(matString) do
+				if evalb(matString[i] = "[") then
+					parenTier += 1;
+					matString := StringTools[Insert](matString,i,"<");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "]") then
+					parenTier -= 1;
+					matString := StringTools[Insert](matString,i,">");
+					matString := StringTools[Delete](matString,i..i);
+				end if
+			end do;
+			newEXPRESSION 	:= cat(newEXPRESSION[1..S_marker-1],matString,newEXPRESSION[E_marker+1..-1]);
+		else break end if;
+		if evalb(parenTier <> 0) then break end if;
+		S_marker 		:= StringTools[Search]("Vector[column](",newEXPRESSION);
+		bail			+= 1
+    end do;
+    S_marker := StringTools[Search]("Vector[row](",newEXPRESSION);
+    bail := 0;
+    while S_marker>0 and bail<5 do
+		parenTier := 1;
+		for i from S_marker+12 to length(newEXPRESSION) do
+			if evalb(newEXPRESSION[i] = "(") then
+				parenTier += 1
+			elif evalb(newEXPRESSION[i] = ")") then
+				parenTier -= 1;
+				if evalb(parenTier = 0) then
+					E_marker	:= i;
+					matString	:= newEXPRESSION[S_marker+12..E_marker-1];
+					break
+				end if
+			end if
+		end do;
+		if evalb(parenTier > 0) then break end if;
+		matString 	:= StringTools[DeleteSpace](matString);
+		B_marker 	:= StringTools[Search]("[",matString);
+		if evalb(B_marker>0) then
+			matString	:= matString[B_marker..-1];
+			parenTier := 0;
+			for i from 1 to length(matString) do
+				if evalb(matString[i] = "[") then
+					parenTier += 1;
+					matString := StringTools[Insert](matString,i,"<");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "]") then
+					parenTier -= 1;
+					matString := StringTools[Insert](matString,i,">");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "," and parenTier = 1) then
+					matString := StringTools[Insert](matString,i,"|");
+					matString := StringTools[Delete](matString,i..i);
+				elif evalb(matString[i] = "(") then parenTier += 1
+				elif evalb(matString[i] = ")") then parenTier -= 1
+				end if
+			end do;
+			newEXPRESSION 	:= cat(newEXPRESSION[1..S_marker-1],matString,newEXPRESSION[E_marker+1..-1]);
+		else break end if;
+		if evalb(parenTier <> 0) then break end if;
+		S_marker 		:= StringTools[Search]("Vector[row](",newEXPRESSION);
+		bail			+= 1
+    end do;
+
     InertForm:-Parse(newEXPRESSION);
     RESPONSE:=eval(%,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
     

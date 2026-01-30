@@ -76,6 +76,11 @@ list_of_expressions_to_test:=
 ,"infty"
 ,"Infinity"
 ,"int(1/(1+x^4),x=-infinity..Infinity);"
+,"integrate(1/(1+x^4),x=-inf..inf);"
+,"Matrix(2, 2, [[a, cd], [b, xy]])"
+,"Matrix(2, 2, [[a*x, 2*Pi], [cos(x), tan(1)*arctan(2)+3]])"
+,"Vector[column](3, [1, 2, 3])"
+,"Vector[row](5, [1, Pi, exp(5), cos(sqrt(x^2+3)), 2^exp(I)])"
 ];
 
 writeto("HTML_examples.html");
