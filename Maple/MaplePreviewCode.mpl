@@ -15,7 +15,8 @@ end proc;
 #####################################################################
 
 common_function_names:=
-    ["exp","ln","log","abs"
+    [   "exp",  "ln",   "log",  "abs",  "sqrt"
+    ,   "int",  "diff", "Int",  "Diff"
     ,   "sin" ,   "cos" ,   "tan" ,   "cot" ,"sec"
     ,   "sinh",  "cosh" ,   "tanh",   "coth","sech"
     ,"arcsin" ,"arccos" ,"arctan" ,"arccot" ,"arcsec"
@@ -227,7 +228,7 @@ end proc;
 #                                                                   #
 #####################################################################
 
-add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Message,RESPONSE,hasBadInfinity; global common_function_names; common_operators, common_regex_literal_operators;
+add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Message,RESPONSE,hasBadInfinity,hasBadMult; global common_function_names, common_operators, common_regex_literal_operators;
 
     Message:=InputMessage;
     RESPONSE:=parse(EXPRESSION);
@@ -313,10 +314,53 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,Messa
             end do; 
         end if;
     end proc;
+
+    hasBadMult := proc(stringToCheck) local parsedString,variableList,nVariables,i,func_flag,func_name,greek_letters; global common_function_names;
+	    greek_letters :=
+            [   "alpha",   "beta",  "gamma",   "delta"
+            ,   "epsilon", "zeta",  "eta",     "theta"
+            ,   "iota",    "kappa", "lambda",  "mu"
+            ,   "nu",      "xi",    "omicron", "pi"
+            ,   "rho",     "sigma", "tau",     "upsilon"
+            ,   "phi",     "chi",   "psi",     "omega"
+            ,   "Alpha",   "Beta",  "Gamma",   "Delta"
+            ,   "Epsilon", "Zeta",  "Eta",     "Theta"
+            ,   "Iota",    "Kappa", "Lambda",  "Mu"
+            ,   "Nu",      "Xi",    "Omicron", "Pi"
+            ,   "Rho",     "Sigma", "Tau",     "Upsilon"
+            ,   "Phi",     "Chi",   "Psi",     "Omega"];
+        parsedString := parse(stringToCheck);
+        variableList := indets([parsedString]);
+	    nVariables   := nops(variableList);
+	    variableList := map(convert,convert(variableList,list),string);
+	    for i from 1 to nVariables do
+	    	func_flag := 0;
+	    	for func_name in [op(common_function_names),op(greek_letters),"parsedString","Vector","Matrix"] do
+	    		if 
+                    evalb(StringTools:-Search(func_name, variableList[i])<>0)
+                then 
+                    func_flag += 1;
+                    break
+                end if;
+	    	end do;
+	    	if
+	    		evalb(func_flag=0 and StringTools:-RegMatch("[a-df-hmnp-z][a-df-hmnp-z]",StringTools:-LowerCase(variableList[i])))
+	    	then
+	    		return true,variableList[i]
+	    	end if
+	    end do;
+	    return false,"";
+    end proc;
+
+    m6 := hasBadMult(EXPRESSION);
     if
         hasBadInfinity(EXPRESSION)
     then
         Message:=cat(Message,"<p><strong>Advice:</strong> You may have incorrectly inputted &infin; in your answer. The Maple syntax for &infin; is &quot;infinity&quot; (the whole word, all lowercase letters).</p>");
+    elif
+        m6[1]
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[2],"&quot;\; this is a valid variable expression, but it might also be a typo.</p>");
     end if;
 
     
@@ -379,7 +423,7 @@ add_syntax_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,Message,newEXPRE
         Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains '",m1,"&lt;', did you mean '",m1,"*&lt;'? </p>");
         m0:='m0'; m0:='m1'; m0:='m2';
     end if;
-    
+
     return Message;
 end proc;
 
