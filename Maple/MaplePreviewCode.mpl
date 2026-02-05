@@ -3,7 +3,7 @@
 
 MaplePreviewerVersion := proc() return "1.0.5_alpha" end proc;
 
-displayMapleVersionNumber:=proc(inputString)
+displayMapleVersionNumber:=proc(inputString) local VersionNumber,versionMessage;
     VersionNumber:=MaplePreviewerVersion():
     versionMessage:=sprintf("<p style=\"text-align: right;color: #12b0fd;\" title=\"Contact Joshua Capel (j.capel@unsw.edu.au) to report errors.\">UNSW M&ouml;bius Custom Previewer v%s</p>",VersionNumber):
 
@@ -16,31 +16,30 @@ end proc;
 
 common_function_names:=
     [   "exp",  "ln",   "log",  "abs",  "sqrt"
-    ,   "int",  "diff", "Int",  "Diff", "integrate", "Integrate"
+    ,   "int",  "diff", "Int",  "Diff", "integrate", "Integrate", "sum"
     ,   "sin" ,   "cos" ,   "tan" ,   "cot" ,"sec"
     ,   "sinh",  "cosh" ,   "tanh",   "coth","sech"
     ,"arcsin" ,"arccos" ,"arctan" ,"arccot" ,"arcsec"
     ,"arcsinh","arccosh","arctanh","arccoth","arcsech"];
 
-common_operators:=["*","-","+","*","^"];
-common_regex_literal_operators:=["\\*","\\+","-","\\^"];
+common_operators := ["*","-","+","*","^"];
+common_regex_literal_operators := ["\\*","\\+","-","\\^"];
 
-forbidden_symbols:={"{","}","[","]"};
+forbidden_symbols := {"{","}","[","]"};
 
 #####################################################################
 #                                                                   #
 #####################################################################
 
-create_MathML:=proc(EXPRESSION) local Message; global common_function_names,common_operators;
+create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,opname,RESPONSE,mfenced_pattern_to_replace; global common_function_names,common_operators;
 
-    Message:="":
-    # Capture input in a list (to be fixed before returning)
+    Message := "":
     newEXPRESSION:=cat("[",EXPRESSION,"]");
     
     if evalb(max(StringTools:-Search(["Matrix","Vector"],newEXPRESSION))=0) then
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)\\."="\\1DECIMALDOT",newEXPRESSION);
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)"="NUMBER\\1",newEXPRESSION);
-        newEXPRESSION:=StringTools[RegSubs]("([a-zA-Z])NUMBER"="\\1",newEXPRESSION);
+        newEXPRESSION:=StringTools[RegSubs]("([a-zA-Z])NUMBER"="\\1",newEXPRESSION)
     end if;
     
     func_list:=ListTools:-Reverse(sort([op](common_function_names),':-length'));
@@ -49,13 +48,13 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
         newEXPRESSION:=StringTools:-SubstituteAll(newEXPRESSION,funcname,cat("%",funcname));
     end do;
     
-    #Fix the '%%cosh' that might have appeared
+    # Fix the '%%cosh' that might have appeared.
     newEXPRESSION:=StringTools[SubstituteAll](newEXPRESSION,"%%","%");
     
-    #Fix the 'arc%' that might have appeared
+    # Fix the 'arc%' that might have appeared.
     newEXPRESSION:=StringTools[SubstituteAll](newEXPRESSION,"arc%","arc");
     
-    ##Fix the '%h' that might have appeared
+    # Fix the '%h' that might have appeared.
     #newEXPRESSION:=StringTools[SubstituteAll](newEXPRESSION,"%h","h");
     
     for opname in ["sum","int"] do:
@@ -68,7 +67,7 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     InertForm:-Parse(newEXPRESSION);
 
     RESPONSE:=eval(%,{`%Matrix`=Matrix,`%Vector`=Vector});
-    RESPONSE:=eval(%,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
+    RESPONSE:=eval(RESPONSE,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
     
     #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
     RESPONSE:=eval(RESPONSE,{`%^`=`^`,`%/`=`/`,`%sqrt`=`sqrt`,`%%exp`=(xx-> e^xx),`%%abs`=:-abs});
@@ -79,7 +78,6 @@ create_MathML:=proc(EXPRESSION) local Message; global common_function_names,comm
     Message:=StringTools:-SubstituteAll(Message,"%","");
     
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)</mi>"="<mn>\\1</mn>",Message);
-    Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOTNUMBER*([0-9]*)</mi>"="<mn>\\1.\\2</mn>",Message);
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT*([0-9]*)</mi>"="<mn>\\1.\\2</mn>",Message);
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT</mi>"="<mn>\\1.</mn>",Message);
     Message:=StringTools[RegSubs]("<mn>NUMBER([0-9]+)</mn>"="<mn>\\1.</mn>",Message);
@@ -100,7 +98,7 @@ end proc;
 #                                                                   #
 #####################################################################
 
-add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Message,RESPONSE,hasBadInfinity,hasBadMult; global common_function_names, common_operators, common_regex_literal_operators;
+add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Message,RESPONSE,hasBadInfinity,hasBadMult,func_name,regex_literal_op,regex_expression,_op; global common_function_names, common_operators, common_regex_literal_operators;
 
     Message:=InputMessage;
     RESPONSE:=parse(EXPRESSION);
@@ -155,19 +153,9 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
         end if;
         
         if 
-            evalb(strLen < 3) 
-        then 
-            return false
-        elif 
-            evalb(2 < strLen and strLen < 8) 
+            evalb(strLen < 8) 
         then
-            for i from 1 to strLen do
-                if
-                    evalb(stringToCheckLowercase[i..i+2]="inf")
-                then 
-                    return true 
-                end if 
-            end do
+            return true
         else            
             for i from 1 to strLen-7 do
                 if 
@@ -320,12 +308,6 @@ add_syntax_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,Message,newEXPRE
     
     if evalb(max(StringTools:-Search([":="],EXPRESSION))>0) then
         Message:=cat(Message,"<p><strong>Syntax advice:</strong> You shouldn't have ':=' in your input.</p>");
-    #else try
-    #    newEXPRESSION:=StringTools:-SubstituteAll(EXPRESSION,"^","&^");
-    #    parse(newEXPRESSION);
-    #    Message:=cat(Message,"<p><strong>Syntax advice:</strong> Possible ambiguous use of the ^ operator. Use (a^b)^c or a^(b^c) instead of a^b^c</p>");
-    #catch:
-    #end try;
     end if;
     
     if evalb(max(StringTools:-Search([";"],EXPRESSION))>0) then
@@ -357,7 +339,7 @@ end proc;
 #                                                                   #
 #####################################################################
 
-testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_function_names,common_operators;
+testmyexpression:=proc(EXPRESSION) local Message,Escaped_EXPRESSION,MessageTail,MATHML_EXPRESSION,syntax_error,RESPONSE; global common_function_names,common_operators;
 
     Escaped_EXPRESSION:=StringTools:-Escape(EXPRESSION,'html');
     Message:=cat("<p><strong>Input Expression</strong>: <span style=\"font-family: Consolas, monospace;color:darkred\">",Escaped_EXPRESSION,"</span></p>");
@@ -368,14 +350,14 @@ testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_functi
     end if;
 
     try
-        #Check if expression can be parsed
-        RESPONSE:=parse(EXPRESSION);
+        # Check if expression can be parsed:
+        RESPONSE := parse(EXPRESSION);
         
         ####### Force unseen errors to light
         ####### eval(%);
         
         try
-            #Check if expression is a function definition
+            # Check if expression is a function definition:
             if evalb(max(StringTools:-Search(["->"],EXPRESSION))>0) then
                 StringTools:-Substitute(EXPRESSION,"->","#");
                 StringTools:-Split(%,"#");
@@ -386,17 +368,12 @@ testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_functi
             end if;
         catch:
             Message:=cat(Message,"<p align=\"center\">",MathML[ExportPresentation](parse(EXPRESSION)),"</p>");
-            
-            #Message:=cat(Message,EXPRESSION,"<p><strong>Warning:</strong> Your expression may have syntax error. If advice below doesn't help then please report this to your lecture in charge of maple.</p>");
-            #syntax_error:=StringTools:-FormatMessage(lastexception[2..-1]);
-            #Message:=cat(Message,"<p><strong>Reported error: </strong>",syntax_error,"</p>");
-            
         end try;
         Message:=add_semantic_advice(EXPRESSION,Message) ;
         
         return cat(Message,MessageTail);
     catch:
-        Message:=cat(Message," <p>Invalid Maple Syntax or input.</p> ");
+        Message:=cat(Message," <p>Invalid Maple syntax or input.</p> ");
         
         syntax_error:=StringTools:-FormatMessage(lastexception[2..-1]);
         syntax_error:=StringTools:-Substitute(syntax_error,"incorrect syntax in parse:","");
@@ -408,8 +385,8 @@ testmyexpression:=proc(EXPRESSION) local Message, RESPONSE; global common_functi
         
         Message:=add_syntax_advice(EXPRESSION,Message):
 
-        return cat(Message,MessageTail);
-    end try;
+        return cat(Message,MessageTail)
+    end try
 end proc;
 
 library_name_list:=
@@ -423,10 +400,8 @@ library_name_list:=
     map(xx->StringTools:-RegSubs("[^A-Za-z0-9_-]" = "",xx),library_name_list);
 
 librarynames:=map2(cat,"maple_preview_code_",library_name_list,".mla");
-#print(%):
 
 for ii in [op(librarynames),"MapleCustomPreviewer.mla"] do
-    #next;
     march('create',ii):
     savelib('MaplePreviewerVersion',ii);
     savelib('common_function_names',ii);
@@ -437,7 +412,6 @@ for ii in [op(librarynames),"MapleCustomPreviewer.mla"] do
     savelib('create_MathML',ii);
     savelib('testmyexpression',ii);
     savelib('displayMapleVersionNumber',ii);
-    #savelib(`&^`,ii);
 end do;
 
 
