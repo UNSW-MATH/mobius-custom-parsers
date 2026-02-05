@@ -16,7 +16,7 @@ end proc;
 
 common_function_names:=
     [   "exp",  "ln",   "log",  "abs",  "sqrt"
-    ,   "int",  "diff", "Int",  "Diff"
+    ,   "int",  "diff", "Int",  "Diff", "integrate", "Integrate"
     ,   "sin" ,   "cos" ,   "tan" ,   "cot" ,"sec"
     ,   "sinh",  "cosh" ,   "tanh",   "coth","sech"
     ,"arcsin" ,"arccos" ,"arctan" ,"arccot" ,"arcsec"
@@ -187,7 +187,7 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
         end if;
     end proc;
 
-    hasBadMult := proc(stringToCheck) local parsedString,variableList,nVariables,i,func_flag,func_name,greek_letters; global common_function_names;
+    hasBadMult := proc(stringToCheck) local parsedString,vList,fList,i,v_flag,f_flag,tag_name,greek_letters; global common_function_names;
 	    greek_letters :=
             [   "alpha",   "beta",  "gamma",   "delta"
             ,   "epsilon", "zeta",  "eta",     "theta"
@@ -202,26 +202,56 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
             ,   "Rho",     "Sigma", "Tau",     "Upsilon"
             ,   "Phi",     "Chi",   "Psi",     "Omega"];
         parsedString := parse(stringToCheck);
-        variableList := indets([parsedString]);
-	    nVariables   := nops(variableList);
-	    variableList := map(convert,convert(variableList,list),string);
-	    for i from 1 to nVariables do
-	    	func_flag := 0;
-	    	for func_name in [op(common_function_names),op(greek_letters),"parsedString","Vector","Matrix"] do
-	    		if 
-                    evalb(StringTools:-Search(func_name, variableList[i])<>0)
-                then 
-                    func_flag += 1;
-                    break
-                end if;
-	    	end do;
-	    	if
-	    		evalb(func_flag=0 and StringTools:-RegMatch("[a-df-hmnp-z][a-df-hmnp-z]",StringTools:-LowerCase(variableList[i])))
-	    	then
-	    		return true,variableList[i]
+        indets([parsedString]);
+        vList := map(convert,convert(remove(xx->type(xx,`^`),remove(xx->type(xx,function),%)),list),string);
+        fList := map(convert,convert(map2(op,0,select(xx->type(xx,function),%%)),list),string);
+        for i from 1 to nops(vList) do
+        	v_flag := 0;
+		    if evalb(StringTools:-RegMatch("[a-z][a-z]",StringTools:-LowerCase(vList[i])) and vList[i]<>"parsedString" and StringTools:-Search(["Vector","Matrix"],vList[i])=[0,0]) then
+			    for tag_name in ListTools:-Reverse(sort([op(common_function_names),"Vector","Matrix"],length)) do
+			    	if evalb(tag_name=vList[i]) then
+			    		return 1,tag_name,vList[i]
+			    	elif evalb(StringTools:-Search(tag_name, vList[i])<>0) then
+			    		return 2,tag_name,vList[i]
+			    	end if
+			    end do;
+			    for tag_name in ListTools:-Reverse(sort(greek_letters,length)) do
+			    	if evalb(tag_name=vList[i]) then
+			    		v_flag := 1;
+			    		break
+			    	elif evalb(StringTools:-Search(tag_name, vList[i])<>0) then
+			    		return 3,tag_name,vList[i]
+			    	end if
+			    end do;
+			    if evalb(v_flag = 0) then return 4,"",vList[i] end if
 	    	end if
 	    end do;
-	    return false,"";
+	    for i from 1 to nops(fList) do
+	    	v_flag := 0;
+	    	f_flag := 0;
+		    if evalb(StringTools:-RegMatch("[a-z][a-z]",StringTools:-LowerCase(fList[i])) and fList[i]<>"parsedString") then
+			    for tag_name in ListTools:-Reverse(sort([op(common_function_names),"Vector","Matrix"],length)) do
+				    if evalb(tag_name=fList[i]) then
+					    f_flag := 1;
+					    break;
+				    elif evalb(StringTools:-Search(tag_name, fList[i])<>0) then
+				    	return 5,tag_name,fList[i]
+				    end if
+			    end do;
+			    if evalb(f_flag = 0) then
+			    	for tag_name in ListTools:-Reverse(sort(greek_letters,length)) do
+			    		if evalb(tag_name=fList[i]) then
+			    			v_flag := 1;
+			    			break
+			    		elif evalb(StringTools:-Search(tag_name, fList[i])<>0) then
+			    			return 6,tag_name,fList[i]
+			    		end if
+			    	end do;
+			    	if evalb(v_flag = 0) then return 7,"",fList[i] end if
+			    end if
+	    	end if
+	    end do;
+        return 0;
     end proc;
 
     m6 := hasBadMult(EXPRESSION);
@@ -230,9 +260,33 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
     then
         Message:=cat(Message,"<p><strong>Advice:</strong> You may have incorrectly inputted &infin; in your answer. The Maple syntax for &infin; is &quot;infinity&quot; (the whole word, all lowercase letters).</p>");
     elif
-        m6[1]
+        evalb(m6[1]=1)
     then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[2],"&quot;\; this is a valid variable expression, but it might also be a typo.</p>");
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;, which is a common Maple function. Is this a typo (missing parentheses and function input)?</p>");
+    elif
+        evalb(m6[1]=2)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a common Maple function. Is this a typo (missing parentheses and/or *)?</p>");
+    elif
+        evalb(m6[1]=3)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a Greek letter. Is this a typo (missing parentheses and/or *)?</p>");
+    elif
+        evalb(m6[1]=4)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;\; is this a typo (missing *)?</p>");
+    elif
+        evalb(m6[1]=5)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the function &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a common Maple function. Is this a typo (missing *)?</p>");
+    elif
+        evalb(m6[1]=6)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the function &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a Greek letter. Is this a typo (missing *)?</p>");
+    elif
+        evalb(m6[1]=7)
+    then
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the function &quot;",m6[3],"&quot;\; is this a typo (missing *)?</p>");
     end if;
 
     
