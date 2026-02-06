@@ -8,17 +8,24 @@ libname := libname,"MapleCustomPreviewer.mla";
 # Suppress most output:
 interface(quiet=true);
 
-# Define a big list of test strings to pass through the previewer.
-list_of_expressions_to_test:=
-[""
-,"<a,b,c>"
+# Define a lists of test strings to pass through the previewer.
+
+# For quick checks, add strings to the following list (move to one of the archive lists below when done).
+# Always keep the empty string here.
+
+quick_LIST := 
+[
+""
+];
+
+create_MathML_LIST:=
+[
+"<a,b,c>"
 ,"1,2,<2,3>,[1,2]"
 ,"[1,2,<2,3>,[1,2]]"
 ,"<<a11,a21>|<a12,a22> >,<<b11,b21>|<b12,b22>>"
-,"3*sqrt(101)(1-exp(-Pi/10))"
 ,"3*2+3*2"
 ,"3*(2+2)"
-,"exp(pi)+e^(Pi)"
 ,"2+2"
 ,"exp(0)"
 ,"exp(x+2)"
@@ -28,24 +35,10 @@ list_of_expressions_to_test:=
 ,"sinh(x)+cosh(t)"
 ,"6*x*ln(x^2+8)-12*x+(96/sqrt(8))*arctan(x/sqrt(8))"
 ,"5*x+8*y+7*z-16=0"
-,"ax+by+cz=d"
 ,"<1,2,0>+b*<2,1,-1>+c*<1,1,1>"
 ,"<1,2,0>+b*<2,1,-1>+c*<1,1.1>"
-,"2/(-1"
-,"2/-1"
-,"(2)(b)"
 ,"[1*2/(3*3)]"
-,"<1,1 ; 2 ,2 >"
-,"<1,1*2/(3*3) ; 2 ,2 >"
 ,"2*<1,1,1>"
-,"2<1,1,1>"
-,"a<1,1,1>"
-,"(2)<1,1,1>"
-,"[exp^x,sin-x,ln*x,cosh+1]"
-,"f:=x->x^2;"
-,"x->x^2;"
-,"2a"
-,"a^b^c"
 ,"(a^b)^c"
 ,"a^(b^c)"
 ,"(1^2)^33"
@@ -55,15 +48,9 @@ list_of_expressions_to_test:=
 ,"x->x^2+x"
 ,"a+b+c+d+c"
 ,"a+b+c+c=1"
-,"2a"
-,"2*e+7*b+3*e"
-,"e^x"
-,"3(sin(x))"
 ,"<1,1,1>"
 ,"<1,1,sin(Pi)>"
 ,"ln(x)"
-,"In(x)"
-,"In(x)"
 ,"sin(Pi/6)"
 ,"Pi/6"
 ,"sin(Pi)"
@@ -78,44 +65,77 @@ list_of_expressions_to_test:=
 ,"3*I"
 ,"I*z*exp(1)"
 ,"(cos(-2)-cosh(-2))/(-2+4*I)"
-,"2*pi*i"
 ,"infinity"
+,"int(1/(1+x^4),x=-infinity..infinity)"
+,"gamma*x"
+,"Gamma*t"
+,"Xi*t"
+,"theta*x"
+,"arcsin(x)"
+,"eta*x"
+,"gamma(x)"
+,"Matrix(2, 2, [[a*x, 2*Pi], [cos(x), tan(1)*arctan(2)+3]])"
+,"Vector[column](3, [1, 2, 3])"
+,"Vector[row](5, [1, Pi, exp(5), cos(sqrt(x^2+3)), 2^exp(I)])"
+,"3.1415*2.7183"
+,".25343E-10"
+,".000854e-15"
+];
+
+add_semantic_advice_LIST :=
+[
+"3*sqrt(101)(1-exp(-Pi/10))"
+,"exp(pi)+e^(Pi)"
+,"(2)(b)"
+,"<1,1 ; 2 ,2 >"
+,"<1,1*2/(3*3) ; 2 ,2 >"
+,"[exp^x,sin-x,ln*x,cosh+1]"
+,"x->x^2;"
+,"2*e+7*b+3*e"
+,"e^x"
+,"3(sin(x))"
+,"In(x)"
+,"2*pi*i"
 ,"infty"
 ,"Infinity"
-,"int(1/(1+x^4),x=-infinity..Infinity);"
-,"integrate(1/(1+x^4),x=-inf..inf);"
+,"infinitya"
+,"int(xy/(1+x^4),x=-infinity..infinity)"
+,"int(1/(1+x^4),x=-infinity..Infinity)"
+,"integrate(1/(1+x^4),x=-inf..inf)"
 ,"uv"
 ,"xy"
 ,"tan(xy)"
 ,"(x,y)->xy"
-,"gamma*x"
 ,"gammax"
 ,"xgamma"
-,"Gamma*t"
-,"theta*x"
 ,"xtheta"
 ,"thetax"
 ,"sinx"
 ,"sin"
-,"arcsin(x)"
 ,"sin+arccos"
 ,"sin(cosx)"
-,"eta*x"
 ,"sin(ax)"
 ,"xsin(x)"
-,"gamma(x)"
 ,"xgamma(x)"
 ,"xf(x)"
 ,"Matrix(2, 2, [[a, cd], [b, xy]])"
-,"Matrix(2, 2, [[a*x, 2*Pi], [cos(x), tan(1)*arctan(2)+3]])"
-,"Vector[column](3, [1, 2, 3])"
-,"Vector[row](5, [1, Pi, exp(5), cos(sqrt(x^2+3)), 2^exp(I)])"
-,"infinitya"
-,"3.1415*2.7183"
-,".25343E-10"
-,".000854e-15"
 ,"f1(x)"
+,"p1(x)+p2(x)"
+,"1(x)"
+];
+
+add_syntax_advice_LIST := 
+[
+"ax+by+cz=d"
+,"2/(-1"
+,"2/-1"
+,"2<1,1,1>"
+,"a<1,1,1>"
+,"(2)<1,1,1>"
+,"f:=x->x^2;"
+,"2a"
 ,"p1a(x)+-p2a(x)"
+,"a^b^c"
 ];
 
 # Identify the HTML file to write to (the old version should be in the folder already, ready to be overwritten).
@@ -131,11 +151,39 @@ printf("  <script>window.MathJax = { MathML: { extensions: [\"mml3.js\", \"conte
 printf("<script type=\"text/javascript\" async src=\"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=MML_HTMLorMML\"></script>");
 printf("</head>\n\n<body>\n");
 
-printf("<p>");
-printf("</p><hr><p>");
+printf("<p style=\"text-align: center; color: #2b35ed; font-size:2.5em;\">Example Outputs of the UNSW M&ouml;bius Custom Previewer - Maple</p>");
+printf("<p>Below are lists of example outputs of the custom previewer. Each input is stored as a string in <code>TestingThePreviewer.mpl</code> and, when the file is run via Maple, it produces this HTML file.</p>");
+printf("<p>The function <code>testmyexpression</code> takes such a string input, and outputs a HTML snippet. In a M&ouml;bius where the custom previewer is uploaded, student inputs stored as <code>$RESPONSE</code> may be called by the following code (entered into the Custom Previewing Code field):</p>");
+printf("<p><span style=\"font-family: Consolas, monospace;color:darkred\">&nbsp;Message:=testmyexpression(\"$RESPONSE\"); printf(\"%%s\",Message);</span></p>");
+printf("<p>The output is what students see in M&ouml; when clicking the preview button. This HTML page contains many such outputs for testing purposes.</p>");
+printf("<p>Note: This file is not perfect - some symbols in the MathML may not render properly - but it can be used for quick sanity checks before uploading the library file to Möbius for more comprehensive checks.</p>");
+printf("<br>");
+
+printf("<hr><details open><summary><span style=\"font-size:1.5em ;color: #188e00\">Quick checks</span>: <strong>New inputs for testing. Move to a list when done. (Always keep empty string here as a control.)</strong><hr></summary><p>");
 
 # For each string in the sample list above, run the previewer and print the output.
-for expression_ in list_of_expressions_to_test do
+for expression_ in quick_LIST do
+    Message:=testmyexpression(expression_): printf("%s",Message);printf("</p><hr><p>");
+end do:
+
+printf("</p></details><hr><details><summary><span style=\"font-size:1.5em; font-family: Consolas, monospace;color: #8d0707\">create_MathML</span>: <strong>Inputs contain no syntax errors or potential mistakes, and <code>add_semantic_advice</code> should concatenate no advice.</strong><hr></summary><p>");
+
+# For each string in the sample list above, run the previewer and print the output.
+for expression_ in create_MathML_LIST do
+    Message:=testmyexpression(expression_): printf("%s",Message);printf("</p><hr><p>");
+end do:
+
+printf("</p></details><details><summary><span style=\"font-size:1.5em; font-family: Consolas, monospace;color: #8d0707\">add_semantic_advice</span>: <strong>Inputs are parsable by Maple, but may contain problems we want to flag with students via <code>add_semantic_advice</code>. Calling <code>create_MathML</code> may fail.</strong><hr></summary><p>");
+
+# For each string in the sample list above, run the previewer and print the output.
+for expression_ in add_semantic_advice_LIST do
+    Message:=testmyexpression(expression_):printf("%s",Message);printf("</p><hr><p>");
+end do:
+
+printf("</p></details><details><summary><span style=\"font-size:1.5em; font-family: Consolas, monospace;color: #8d0707\">add_syntax_advice</span>: <strong>Input throws at least one error upon parsing.</strong><hr></summary><p>");
+
+# For each string in the sample list above, run the previewer and print the output.
+for expression_ in add_syntax_advice_LIST do
     Message:=testmyexpression(expression_):printf("%s",Message);printf("</p><hr><p>");
 end do:
 
