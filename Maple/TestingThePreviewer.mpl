@@ -1,7 +1,14 @@
+# This *.mpl file generates the HTML_examples.html file.
+# This file contains a list of example outputs of the custom previewer.
+# This is not perfect - some symbols in the MathML may not render properly - but can be used for quick sanity checks before uploading to Möbius for more comprehensive checks.
+
+# Include the latest version of the Maple previewer library.
 libname := libname,"MapleCustomPreviewer.mla";
 
+# Suppress most output:
 interface(quiet=true);
 
+# Define a big list of test strings to pass through the previewer.
 list_of_expressions_to_test:=
 [""
 ,"<a,b,c>"
@@ -103,10 +110,18 @@ list_of_expressions_to_test:=
 ,"Matrix(2, 2, [[a*x, 2*Pi], [cos(x), tan(1)*arctan(2)+3]])"
 ,"Vector[column](3, [1, 2, 3])"
 ,"Vector[row](5, [1, Pi, exp(5), cos(sqrt(x^2+3)), 2^exp(I)])"
+,"infinitya"
+,"3.1415*2.7183"
+,".25343E-10"
+,".000854e-15"
+,"f1(x)"
+,"p1a(x)+-p2a(x)"
 ];
 
+# Identify the HTML file to write to (the old version should be in the folder already, ready to be overwritten).
 writeto("HTML_examples.html");
 
+# Add HTML preamble:
 printf("<!DOCTYPE html>");
 printf("<html>");
 printf("<head>");
@@ -119,15 +134,16 @@ printf("</head>\n\n<body>\n");
 printf("<p>");
 printf("</p><hr><p>");
 
-
+# For each string in the sample list above, run the previewer and print the output.
 for expression_ in list_of_expressions_to_test do
     Message:=testmyexpression(expression_):printf("%s",Message);printf("</p><hr><p>");
 end do:
 
-
+# Add HTML postscript:
 printf("</p>");
 printf("</body>\n</html>");
 
+# Return to normal terminal output.
 writeto(terminal);
 
 
