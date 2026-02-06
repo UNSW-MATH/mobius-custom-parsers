@@ -104,7 +104,7 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     # Fix the '%h' that might have appeared.
     #newEXPRESSION:=StringTools[SubstituteAll](newEXPRESSION,"%h","h");
     
-    # Capitalise "sum" and "int" occurring in the string. (Redundant now that they are in common_function_names?)
+    # Capitalise "sum" and "int" occurring in the string. ('Sum' and 'Int' are inert compared to 'sum' and 'int'.)
     for opname in ["sum","int"] do:
         newEXPRESSION:=StringTools:-SubstituteAll(newEXPRESSION,opname,StringTools:-Capitalize(opname));
     end do;
@@ -121,6 +121,9 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
 
     # Parse any `Matrix` and `Vector` functions; converts to standard "< >" form.
     RESPONSE:=eval(%,{`%Matrix`=Matrix,`%Vector`=Vector});
+
+    RESPONSE:=eval(%,{`%Int`=Int,`%Integrate`=Integrate,`%Sum`=Sum});
+
     # Parse any "< >" vectors/matrices.
     RESPONSE:=eval(RESPONSE,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
     
@@ -217,9 +220,8 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
     end if;
     
     # Search input string for occurrences of numeric preceding "(", indicating missing *:
-    # (Currently flags functions ending with numeric, such as `p1` or `p_1`.)
     if
-        evalb(StringTools[RegMatch]("([0-9]+)(\\()",EXPRESSION,m0,m1,m2))
+        evalb(StringTools[RegMatch]("([^A-Za-z_+]|^)([0-9]+)(\\()",EXPRESSION,m0,m1,m2))
     then
         Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains ",m0,", did you mean ",m1,"*",m2,"? Parts of your expression might have vanished.</p>");
     end if;
@@ -293,6 +295,8 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
             ,   "Phi",     "Chi",   "Psi",     "Omega"];
         parsedString := parse(stringToCheck);
         indets([parsedString]);
+        # Evaluates integrals etc. that might have ended up in the indets for some reason.
+        indets(%);
 
         # Extract variable indets (excluding function and exponent expressions such as a^x or f(t)).
         vList := map(convert,convert(remove(xx->type(xx,`^`),remove(xx->type(xx,function),%)),list),string);
@@ -452,9 +456,8 @@ add_syntax_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,Message,newEXPRE
     end if;
     
     # Search for occurrences of numeric followed immediately by letter, suggesting possible missing *:
-    # (Note: May flag valid variables, e.g. `p1a`, unlikely to be asked for in exam setting.)
     if
-        evalb(StringTools[RegMatch]("([0-9]+)([A-Za-z]+)",EXPRESSION,m0,m1,m2))
+        evalb(StringTools[RegMatch]("([^A-Za-z_+]|^)([0-9]+)([A-Za-z]+)",EXPRESSION,m0,m1,m2))
     then
         Message:=cat(Message,"<p><strong>Syntax advice:</strong> Your expression contains ",m0,", did you mean ",m1,"*",m2,"? Remember to use the multiplication sign '*' for multiplication.</p>");
         m0:='m0'; m0:='m1'; m0:='m2';
@@ -522,8 +525,18 @@ testmyexpression:=proc(EXPRESSION) local Message,Escaped_EXPRESSION,MessageTail,
         end try;
 
         # Add output of add_semantic_advice to Message.
-        Message:=add_semantic_advice(EXPRESSION,Message) ;
-        
+
+        if evalb(max(StringTools:-Search(["->"],EXPRESSION))>0) then
+            StringTools:-Substitute(EXPRESSION,"->","#");
+            # Split string into two using marker "#".
+            StringTools:-Split(%,"#");
+            # Use add_semantic_advice on both halves of the string, with a \mapsto in the middle, and append to Message.
+            Message := add_semantic_advice(%[1],Message);
+            Message := add_semantic_advice(%%[2],Message)
+        else
+            Message:=add_semantic_advice(EXPRESSION,Message)
+        end if;
+
         # Conclude by concatenating the output of displayMapleVersionNumber to Message.
         return cat(Message,MessageTail);
     catch:
