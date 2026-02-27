@@ -155,7 +155,7 @@ printf("<p style=\"text-align: center; color: #2b35ed; font-size:2.5em;\">Exampl
 printf("<p>Below are lists of example outputs of the custom previewer. Each input is stored as a string in <code>TestingThePreviewer.mpl</code> and, when the file is run via Maple, it produces this HTML file.</p>");
 printf("<p>The function <code>testmyexpression</code> takes such a string input, and outputs a HTML snippet. In a M&ouml;bius where the custom previewer is uploaded, student inputs stored as <code>$RESPONSE</code> may be called by the following code (entered into the Custom Previewing Code field):</p>");
 printf("<p><span style=\"font-family: Consolas, monospace;color:darkred\">&nbsp;Message:=testmyexpression(\"$RESPONSE\"); printf(\"%%s\",Message);</span></p>");
-printf("<p>The output is what students see in M&ouml; when clicking the preview button. This HTML page contains many such outputs for testing purposes.</p>");
+printf("<p>The output is what students see in M&ouml;bius when clicking the preview button. This HTML page contains many such outputs for testing purposes.</p>");
 printf("<p>Note: This file is not perfect - some symbols in the MathML may not render properly - but it can be used for quick sanity checks before uploading the library file to Möbius for more comprehensive checks.</p>");
 printf("<br>");
 

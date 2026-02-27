@@ -45,6 +45,7 @@ end proc;
 common_function_names :=
     [   "exp",  "ln",   "log",  "abs",  "sqrt"
     ,   "int",  "diff", "Int",  "Diff", "integrate", "Integrate", "sum"
+    ,   "Curl", "Div",  "Nabla",  "Del"
     ,   "sin" ,   "cos" ,   "tan" ,   "cot" ,"sec"
     ,   "sinh",  "cosh" ,   "tanh",   "coth","sech"
     ,"arcsin" ,"arccos" ,"arctan" ,"arccot" ,"arcsec"
@@ -149,6 +150,9 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     Message:=StringTools[RegSubs]("<mn>NUMBER([0-9]+)</mn>"="<mn>\\1.</mn>",Message);
     Message:=StringTools[SubstituteAll](Message,"</mn><mo>&InvisibleTimes;</mo><mn>","</mn><mo>&times;</mo><mn>");
     
+    Message:=StringTools[SubstituteAll](Message,"<mi>pi</mi>","<mi>&pi;</mi>");
+    Message:=StringTools[SubstituteAll](Message,"<mi>Gamma</mi>","<mi>&Gamma;</mi>");
+
     Message:=StringTools[RegSubs]("(</mn></[a-z]+>)<mo>&InvisibleTimes;</mo><mn>"="\\1<mo>\\&times;</mo><mn>",Message);
     Message:=StringTools[RegSubs]("</mn><mo>&InvisibleTimes;</mo>(<[a-z]+><mn>)"="<\/mn><mo>\\&times;</mo>\\1",Message);
     Message:=StringTools[RegSubs]("(</mn></[a-z]+>)<mo>&InvisibleTimes;</mo>(<[a-z]+><mn>)"="\\1<mo>\\&times;</mo>\\2",Message);
