@@ -49,7 +49,11 @@ common_function_names :=
     ,   "sin" ,   "cos" ,   "tan" ,   "cot" ,"sec"
     ,   "sinh",  "cosh" ,   "tanh",   "coth","sech"
     ,"arcsin" ,"arccos" ,"arctan" ,"arccot" ,"arcsec"
-    ,"arcsinh","arccosh","arctanh","arccoth","arcsech"];
+    ,"arcsinh","arccosh","arctanh","arccoth","arcsech"
+
+    ,"GAMMA","erf","Li","Ei"
+    ,"hypergeom","binomial"
+    ,"conjugate"];
 
 common_operators := ["*","-","+","*","^"];
 
@@ -272,139 +276,207 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
     # This subproc parses the input string, isolates indeterminate terms, and checks the terms as strings for spelling against common functions and Greek letters.
     # Only triggered on an indet if it contains two adjacent letters (and no instance of "Vector" or "Matrix" expressions).
     # The following outputs are possible:
-    # 0: all variable and function names in student input pass all checks
-    # 1: a variable name is a common function name e.g. `sin`
-    # 2: a variable name contains common function name as a strict substring e.g. `sinx`
-    # 3: a variable name contains a Greek letter as a strict substring e.g. `gammax`
-    # 4: a variable name contains at least two adjacent letters and is none of cases 1-3 e.g. `uv` or `xy`
-    # 5: a function name contains common function name as a strict substring e.g. `xsin`
-    # 6: a function name contains a Greek letter as a strict substring e.g. `nGamma`
-    # 7: a function name contains at least two adjacent letters and is none of cases 5-6 e.g. `xf` or `th`
+    # Case codes for hasBadMult
+    HBM_OK                          := 0: # all variable and function names in student input pass all checks
+    HBM_VAR_IS_COMMON_FUNCTION      := 1: # a variable name is a common function name e.g. `sin`
+    HBM_VAR_HAS_COMMON_SUBSTRING    := 2: # a variable name contains common function name as a strict substring e.g. `sinx`
+    HBM_VAR_HAS_GREEK_SUBSTRING     := 3: # a variable name contains a Greek letter as a strict substring e.g. `gammax`
+    HBM_VAR_HAS_ADJACENT_LETTERS    := 4: # a variable name contains at least two adjacent letters and is none of cases 1-3 e.g. `uv` or `xy`
+    HBM_FUNC_HAS_COMMON_SUBSTRING   := 5: # a function name contains common function name as a strict substring e.g. `xsin`
+    HBM_FUNC_HAS_GREEK_SUBSTRING    := 6: # a function name contains a Greek letter as a strict substring e.g. `nGamma`
+    HBM_FUNC_HAS_ADJACENT_LETTERS   := 7: # a function name contains at least two adjacent letters and is none of cases 5-6 e.g. `xf` or `th`
     # In cases 1-7 above, two additional outputs are given
     # - the Greek letter or common function name compared to the offending indet (where possible, otherwise ""), and
     # - the indet in the student input which triggered hasBadMult.
-    hasBadMult := proc(stringToCheck) local parsedString,vList,fList,i,v_flag,f_flag,tag_name,greek_letters; global common_function_names;
-	    greek_letters :=
-            [   "alpha",   "beta",  "gamma",   "delta"
-            ,   "epsilon", "zeta",  "eta",     "theta"
-            ,   "iota",    "kappa", "lambda",  "mu"
-            ,   "nu",      "xi",    "omicron", "pi"
-            ,   "rho",     "sigma", "tau",     "upsilon"
-            ,   "phi",     "chi",   "psi",     "omega"
-            ,   "Alpha",   "Beta",  "Gamma",   "Delta"
-            ,   "Epsilon", "Zeta",  "Eta",     "Theta"
-            ,   "Iota",    "Kappa", "Lambda",  "Mu"
-            ,   "Nu",      "Xi",    "Omicron", "Pi"
-            ,   "Rho",     "Sigma", "Tau",     "Upsilon"
-            ,   "Phi",     "Chi",   "Psi",     "Omega"];
+
+    # Common tag groups of non-inert functions (functions that should be evaluated by the previewer)
+    HBM_SPECIAL_NAMES := ["Vector", "Matrix"]:
+
+    HBM_GREEK_LETTERS :=
+        [   "alpha",   "beta",  "gamma",   "delta"
+        ,   "epsilon", "zeta",  "eta",     "theta"
+        ,   "iota",    "kappa", "lambda",  "mu"
+        ,   "nu",      "xi",    "omicron", "pi"
+        ,   "rho",     "sigma", "tau",     "upsilon"
+        ,   "phi",     "chi",   "psi",     "omega"
+        ,   "Alpha",   "Beta",  "Gamma",   "Delta"
+        ,   "Epsilon", "Zeta",  "Eta",     "Theta"
+        ,   "Iota",    "Kappa", "Lambda",  "Mu"
+        ,   "Nu",      "Xi",    "Omicron", "Pi"
+        ,   "Rho",     "Sigma", "Tau",     "Upsilon"
+        ,   "Phi",     "Chi",   "Psi",     "Omega"]:
+
+    # This subproc parses the input string, isolates indeterminate terms, and checks the terms as strings
+    # for spelling against common functions and Greek letters.
+    HBM_MATCH_COMMON := 1:
+    HBM_MATCH_GREEK := 2:
+
+    # Combine common function names and Greek letters into one length-sorted list.
+    # Each entry is [length, label, tag], which lets us match the longest tag first.
+    HBM_MATCH_TAGS :=
+        [   seq([length(name), HBM_MATCH_COMMON, name],
+                name in [op(common_function_names), op(HBM_SPECIAL_NAMES)])
+        ,   seq([length(name), HBM_MATCH_GREEK, name],
+                name in HBM_GREEK_LETTERS)
+        ]:
+
+    # This helper returns the longest matching tag, together with a label and a flag
+    # indicating whether the name matched exactly.
+    hasBadMultFindTag := proc(name)
+        local tag_entry;
+
+        for tag_entry in ListTools:-Reverse(sort(HBM_MATCH_TAGS)) do
+            if evalb(tag_entry[3] = name) then
+                return tag_entry[2], tag_entry[3], true;
+            elif evalb(StringTools:-Search(tag_entry[3], name) <> 0) then
+                return tag_entry[2], tag_entry[3], false;
+            end if;
+        end do;
+
+        return 0, "", false;
+    end proc;
+
+    hasBadMult := proc(stringToCheck) local parsedString,vList,fList,i,v_flag,f_flag,tag_type,tag_name,exact_match; global common_function_names;
+
         parsedString := parse(stringToCheck);
         indets([parsedString]);
-        # Evaluates integrals etc. that might have ended up in the indets for some reason.
         indets(%);
 
-        # Extract variable indets (excluding function and exponent expressions such as a^x or f(t)).
         vList := map(convert,convert(remove(xx->type(xx,`^`),remove(xx->type(xx,function),%)),list),string);
-        # Extract function indets.
         fList := map(convert,convert(map2(op,0,select(xx->type(xx,function),%%)),list),string);
 
-        # For pure indet variables, check whether:
-        # - variable contains adjacent letters (but not "parsedString", and not containing "Matrix" or "Vector"),
-        # - variable contains or is a common function name,
-        # - variable contains or is a Greek letter,
-        # and report first offender.
         for i from 1 to nops(vList) do
-        	v_flag := 0;
-		    if evalb(StringTools:-RegMatch("[a-z][a-z]",StringTools:-LowerCase(vList[i])) and vList[i]<>"parsedString" and StringTools:-Search(["Vector","Matrix"],vList[i])=[0,0]) then
-			    for tag_name in ListTools:-Reverse(sort([op(common_function_names),"Vector","Matrix"],length)) do
-			    	if evalb(tag_name=vList[i]) then
-			    		return 1,tag_name,vList[i]
-			    	elif evalb(StringTools:-Search(tag_name, vList[i])<>0) then
-			    		return 2,tag_name,vList[i]
-			    	end if
-			    end do;
-			    for tag_name in ListTools:-Reverse(sort(greek_letters,length)) do
-			    	if evalb(tag_name=vList[i]) then
-			    		v_flag := 1;
-			    		break
-			    	elif evalb(StringTools:-Search(tag_name, vList[i])<>0) then
-			    		return 3,tag_name,vList[i]
-			    	end if
-			    end do;
-			    if evalb(v_flag = 0) then return 4,"",vList[i] end if
-	    	end if
-	    end do;
+            v_flag := 0;
 
-        # For pure indet functions, check whether:
-        # - variable contains adjacent letters (but not "parsedString", and not containing "Matrix" or "Vector"),
-        # - variable contains or is a common function name,
-        # - variable contains or is a Greek letter,
-        # and report first offender.
-	    for i from 1 to nops(fList) do
-	    	v_flag := 0;
-	    	f_flag := 0;
-		    if evalb(StringTools:-RegMatch("[a-z][a-z]",StringTools:-LowerCase(fList[i])) and fList[i]<>"parsedString") then
-			    for tag_name in ListTools:-Reverse(sort([op(common_function_names),"Vector","Matrix"],length)) do
-				    if evalb(tag_name=fList[i]) then
-					    f_flag := 1;
-					    break;
-				    elif evalb(StringTools:-Search(tag_name, fList[i])<>0) then
-				    	return 5,tag_name,fList[i]
-				    end if
-			    end do;
-			    if evalb(f_flag = 0) then
-			    	for tag_name in ListTools:-Reverse(sort(greek_letters,length)) do
-			    		if evalb(tag_name=fList[i]) then
-			    			v_flag := 1;
-			    			break
-			    		elif evalb(StringTools:-Search(tag_name, fList[i])<>0) then
-			    			return 6,tag_name,fList[i]
-			    		end if
-			    	end do;
-			    	if evalb(v_flag = 0) then return 7,"",fList[i] end if
-			    end if
-	    	end if
-	    end do;
+            if evalb(
+                StringTools:-RegMatch("[a-z][a-z]", StringTools:-LowerCase(vList[i]))
+                and vList[i] <> "parsedString"
+                and StringTools:-Search(HBM_SPECIAL_NAMES, vList[i]) = [0,0]
+            ) then
+                tag_type, tag_name, exact_match := hasBadMultFindTag(vList[i]);
 
-        # Otherwise report all clear.
-        return 0;
-    end proc;
+                if tag_type = HBM_MATCH_COMMON then
+                    if exact_match then
+                        return HBM_VAR_IS_COMMON_FUNCTION, tag_name, vList[i];
+                    else
+                        return HBM_VAR_HAS_COMMON_SUBSTRING, tag_name, vList[i];
+                    end if;
+
+                elif tag_type = HBM_MATCH_GREEK then
+                    if exact_match then
+                        v_flag := 1;
+                    else
+                        return HBM_VAR_HAS_GREEK_SUBSTRING, tag_name, vList[i];
+                    end if;
+                end if;
+
+                # Otherwise it's just an adjacent-letter variable.
+                if evalb(v_flag = 0) then
+                    return HBM_VAR_HAS_ADJACENT_LETTERS, "", vList[i];
+                end if;
+            end if;
+        end do;
+
+        for i from 1 to nops(fList) do
+            f_flag := 0;
+
+            if evalb(
+                StringTools:-RegMatch("[a-z][a-z]", StringTools:-LowerCase(fList[i]))
+                and fList[i] <> "parsedString"
+                and StringTools:-Search(HBM_SPECIAL_NAMES, fList[i]) = [0,0]
+            ) then
+                tag_type, tag_name, exact_match := hasBadMultFindTag(fList[i]);
+
+                if tag_type = HBM_MATCH_COMMON then
+                    if exact_match then
+                        f_flag := 1;
+                    else
+                        return HBM_FUNC_HAS_COMMON_SUBSTRING, tag_name, fList[i];
+                    end if;
+
+                elif tag_type = HBM_MATCH_GREEK then
+                    if exact_match then
+                        f_flag := 1;
+                    else
+                        return HBM_FUNC_HAS_GREEK_SUBSTRING, tag_name, fList[i];
+                    end if;
+                end if;
+
+                if evalb(f_flag = 0 and StringTools:-RegMatch("[a-z][a-z]", StringTools:-LowerCase(fList[i])) and fList[i] <> "parsedString") then
+                    return HBM_FUNC_HAS_ADJACENT_LETTERS, "", fList[i];
+                end if;
+            end if;
+        end do;
+
+        return HBM_OK;
+    end proc:
+
+    # Procedture to turn a hasBadMult result into advice HTML.
+    hasBadMultAdvice := proc(m6)
+        local code;
+        code := m6[1];
+
+        if code = HBM_VAR_IS_COMMON_FUNCTION then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the variable &quot;", m6[3],
+                "&quot;, which is a common Maple function. Is this a typo (missing parentheses and function input)?</p>"
+            );
+
+        elif code = HBM_VAR_HAS_COMMON_SUBSTRING then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the variable &quot;", m6[3],
+                "&quot;, which contains the substring &quot;", m6[2],
+                "&quot;, which is a common Maple function. Is this a typo (missing parentheses and/or *)?</p>"
+            );
+
+        elif code = HBM_VAR_HAS_GREEK_SUBSTRING then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the variable &quot;", m6[3],
+                "&quot;, which contains the substring &quot;", m6[2],
+                "&quot;, which is a Greek letter. Is this a typo (missing parentheses and/or *)?</p>"
+            );
+
+        elif code = HBM_VAR_HAS_ADJACENT_LETTERS then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the variable &quot;", m6[3],
+                "&quot;\; is this a typo (missing *)?</p>"
+            );
+
+        elif code = HBM_FUNC_HAS_COMMON_SUBSTRING then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the function &quot;", m6[3],
+                "&quot;, which contains the substring &quot;", m6[2],
+                "&quot;, which is a common Maple function. Is this a typo (missing *)?</p>"
+            );
+
+        elif code = HBM_FUNC_HAS_GREEK_SUBSTRING then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the function &quot;", m6[3],
+                "&quot;, which contains the substring &quot;", m6[2],
+                "&quot;, which is a Greek letter. Is this a typo (missing *)?</p>"
+            );
+
+        elif code = HBM_FUNC_HAS_ADJACENT_LETTERS then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the function &quot;", m6[3],
+                "&quot;\; is this a typo (missing *)?</p>"
+            );
+        end if;
+
+        return "";
+    end proc:
 
     # Search input string for triggers of `hasBadInfinity` or `hasBadMult`.
     # If hasBadInfinity is triggered then hasBadMult output is ignored.
-    # Otherwise if hasBadMult is triggered then a message is displayed depending on the nature of the indet which triggered hasBadMult.
-    m6 := hasBadMult(EXPRESSION);
-    if
-        hasBadInfinity(EXPRESSION)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> You may have incorrectly inputted &infin; in your answer. The Maple syntax for &infin; is &quot;infinity&quot; (the whole word, all lowercase letters).</p>");
-    elif
-        evalb(m6[1]=1)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;, which is a common Maple function. Is this a typo (missing parentheses and function input)?</p>");
-    elif
-        evalb(m6[1]=2)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a common Maple function. Is this a typo (missing parentheses and/or *)?</p>");
-    elif
-        evalb(m6[1]=3)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a Greek letter. Is this a typo (missing parentheses and/or *)?</p>");
-    elif
-        evalb(m6[1]=4)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the variable &quot;",m6[3],"&quot;\; is this a typo (missing *)?</p>");
-    elif
-        evalb(m6[1]=5)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the function &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a common Maple function. Is this a typo (missing *)?</p>");
-    elif
-        evalb(m6[1]=6)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the function &quot;",m6[3],"&quot;, which contains the substring &quot;",m6[2],"&quot;, which is a Greek letter. Is this a typo (missing *)?</p>");
-    elif
-        evalb(m6[1]=7)
-    then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains the function &quot;",m6[3],"&quot;\; is this a typo (missing *)?</p>");
+    # Otherwise if hasBadMult is triggered then a message is displayed.
+    m6 := hasBadMult(EXPRESSION):
+
+    if hasBadInfinity(EXPRESSION) then
+        Message := cat(Message,
+            "<p><strong>Advice:</strong> You may have incorrectly inputted \\(\\infty\\) in your answer. The Maple syntax for \\(\\infty\\) is &quot;infinity&quot; (the whole word, all lowercase letters).</p>");
+
+    elif m6[1] <> HBM_OK then
+        Message := cat(Message, hasBadMultAdvice([m6]));
     end if;
 
     # Searches for ALL occurrences of common function name as operands of common binary operators (e.g. "sin+", "exp^"):
