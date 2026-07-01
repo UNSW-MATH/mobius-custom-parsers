@@ -87,6 +87,9 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     # - If letter precedes added "NUMBER", remove "NUMBER" (numeric in variables left alone, numeric after "DECIMALDOT" not treated as separate).
     if evalb(max(StringTools:-Search(["Matrix","Vector"],newEXPRESSION))=0) then
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)\\."="\\1DECIMALDOT",newEXPRESSION);
+        newEXPRESSION:=StringTools[RegSubs]("\\.([0-9]+)"="DECIMALDOT\\1",newEXPRESSION);
+        newEXPRESSION:=StringTools[RegSubs]("DECIMALDOTDECIMALDOT"="DECIMALDOT",newEXPRESSION);
+
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)"="NUMBER\\1",newEXPRESSION);
         newEXPRESSION:=StringTools[RegSubs]("([a-zA-Z])NUMBER"="\\1",newEXPRESSION)
     end if;
@@ -119,15 +122,36 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     newEXPRESSION:=StringTools:-RegSubs("([^A-Za-z0-9]|^)Pi([^A-Za-z0-9]|$)"="\\1pi\\2",newEXPRESSION);
     newEXPRESSION:=StringTools:-RegSubs("([^A-Za-z0-9]|^)I([^A-Za-z0-9]|$)"="\\1i\\2",newEXPRESSION);
 
+    
     ## 3. Convert string to inert form:
-    InertForm:-Parse(newEXPRESSION);
-
+    InertForm:-Parse(newEXPRESSION);print(newEXPRESSION);
+    
     ## 4. Parse select aspects of the inert form expression for correct MathML generation:
 
     # Parse any `Matrix` and `Vector` functions; converts to standard "< >" form.
     RESPONSE:=eval(%,{`%Matrix`=Matrix,`%Vector`=Vector});
 
-    RESPONSE:=eval(%,{`%Int`=Int,`%Integrate`=Integrate,`%Sum`=Sum});
+    fList := convert(map2(op,0,select(xx->type(xx,function),indets(RESPONSE))),list);print(fList);
+    normalizeNumberHead := proc(s)
+        local t;
+        # Remove any inert-marker percent signs first
+        t := StringTools:-SubstituteAll(convert(s,string), "%", "");
+
+        # Only act on names like NUMBER21 or NUMBER21DECIMALDOT5
+        if StringTools:-RegMatch("NUMBER|DECIMALDOT", t) then
+            t := StringTools:-RegSubs("NUMBER" = "", t);
+            t := StringTools:-RegSubs("DECIMALDOT" = ".", t);
+            return s=parse(t);
+        end if;
+
+        return NULL;
+    end proc:
+
+    fList := map(normalizeNumberHead, fList);print(%);
+
+    RESPONSE:=eval(RESPONSE,fList);
+
+    RESPONSE:=eval(RESPONSE,{`%Int`=Int,`%Integrate`=Integrate,`%Sum`=Sum});
 
     # Parse any "< >" vectors/matrices.
     RESPONSE:=eval(RESPONSE,{`%<,>`=`<,>`,`%<|>`=`<|>`,`%\`<,>\``=`<,>`,`%\`<|>\``=`<|>`});
