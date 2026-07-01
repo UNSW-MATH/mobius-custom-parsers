@@ -160,7 +160,7 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     RESPONSE:=eval(RESPONSE,{`%^`=`^`,`%/`=`/`,`%sqrt`=`sqrt`,`%%exp`=(xx-> e^xx),`%%abs`=:-abs});
     
     # This resolves a bug in Maple2019 where an expression like 1-(1-1) is previewed as 1-1-1.
-    RESPONSE:=eval(RESPONSE,{`%+`=`+`});
+    #RESPONSE:=eval(RESPONSE,{`%+`=`+`});
 
     # Convert inert form expression to MathML string and concatenate onto Message.
     Message:=cat(Message,InertForm:-ToMathML(%));
