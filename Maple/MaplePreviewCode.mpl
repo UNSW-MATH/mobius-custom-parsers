@@ -229,9 +229,10 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
     
     # Search input string for occurrences of numeric preceding "(", indicating missing *:
     if
-        evalb(StringTools[RegMatch]("([^A-Za-z_+]|^)([0-9]+)(\\()",EXPRESSION,m0,m1,m2))
+        evalb(StringTools[RegMatch]("(^|[^A-Za-z0-9_])([0-9]+)(\\()",EXPRESSION,m0,m1,m2,m3))
     then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains ",m0,", did you mean ",m1,"*",m2,"? Parts of your expression might have vanished.</p>");
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains <code>",m2,m3,"</code>, did you mean <code>",m2,"*",m3,"</code>? Parts of your expression might have vanished.</p>");
+        m0:='m0';m1:='m1';m2:='m2';m3:='m3';
     end if;
 
     # This subproc checks for instance of `inf` not a substring of `infinity`; may be a case of misspelling the correct Maple quantity.
@@ -533,18 +534,18 @@ add_syntax_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,Message,newEXPRE
     
     # Search for occurrences of numeric followed immediately by letter, suggesting possible missing *:
     if
-        evalb(StringTools[RegMatch]("([^A-Za-z_+]|^)([0-9]+)([A-Za-z]+)",EXPRESSION,m0,m1,m2))
+        evalb(StringTools[RegMatch]("([^A-Za-z0-9_]|^)([0-9]+)([A-Za-z]+)",EXPRESSION,m0,m1,m2,m3))
     then
-        Message:=cat(Message,"<p><strong>Syntax advice:</strong> Your expression contains ",m0,", did you mean ",m1,"*",m2,"? Remember to use the multiplication sign '*' for multiplication.</p>");
-        m0:='m0'; m0:='m1'; m0:='m2';
+        Message:=cat(Message,"<p><strong>Syntax advice:</strong> Your expression contains <code>",m2,m3,"</code>, did you mean <code>",m2,"*",m3,"</code>? Remember to use the multiplication sign '*' for multiplication.</p>");
+        m0:='m0'; m1:='m1'; m2:='m2'; m3:='m3';
     end if;
     
-    # Search for occurrences of alphanumeric followed immediately by "<", suggesting possible missing *:
+    # Search for occurrences of alphanumeric or '(' followed immediately by "<", suggesting possible missing *:
     if
-        evalb(StringTools[RegMatch]("([0-9]+|[a-zA-z]|\\))(<)",EXPRESSION,m2,m1,m2))
+        evalb(StringTools[RegMatch]("([0-9]+|[a-zA-z]|\\))(<)",EXPRESSION,m0,m1,m2))
     then
-        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains '",m1,"&lt;', did you mean '",m1,"*&lt;'? </p>");
-        m0:='m0'; m0:='m1'; m0:='m2';
+        Message:=cat(Message,"<p><strong>Advice:</strong> Your expression contains <code>",m1,"&lt;</code>, did you mean <code>",m1,"*&lt;</code>? </p>");
+        m0:='m0'; m1:='m1'; m2:='m2';
     end if;
 
     # Return HTML string with advice based on student input.
