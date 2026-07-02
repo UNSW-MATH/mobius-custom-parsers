@@ -124,14 +124,14 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
 
     
     ## 3. Convert string to inert form:
-    InertForm:-Parse(newEXPRESSION);print(newEXPRESSION);
+    InertForm:-Parse(newEXPRESSION);
     
     ## 4. Parse select aspects of the inert form expression for correct MathML generation:
 
     # Parse any `Matrix` and `Vector` functions; converts to standard "< >" form.
     RESPONSE:=eval(%,{`%Matrix`=Matrix,`%Vector`=Vector});
 
-    fList := convert(map2(op,0,select(xx->type(xx,function),indets(RESPONSE))),list);print(fList);
+    fList := convert(map2(op,0,select(xx->type(xx,function),indets(RESPONSE))),list);
     normalizeNumberHead := proc(s)
         local t;
         # Remove any inert-marker percent signs first
@@ -147,7 +147,7 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
         return NULL;
     end proc:
 
-    fList := map(normalizeNumberHead, fList);print(%);
+    fList := map(normalizeNumberHead, fList);
 
     RESPONSE:=eval(RESPONSE,fList);
 
