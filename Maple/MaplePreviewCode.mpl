@@ -9,7 +9,7 @@
 # - create_MathML (proc: generates MathML from (most) parsable student inputs as literally as possible),
 # - add_semantic_advice (proc: concatenates HTML advice for parsable student inputs),
 # - add_syntax_advice (proc: concatenates HTML advice for non-parsable student inputs),
-# - testmyexpression (proc: generates HTML message for previewer based on student input).
+# - testmyexpression (proc: generates HTML message for previewer based on student input, with optional custom warnings).
 
 # Instructions for Windows:
 # Run this file with make.bat (a batch script file which should accompany this file):
@@ -582,8 +582,9 @@ end proc;
 
 # This proc is the one used in Möbius for custom previewing. 
 # It takes the student's  `$RESPONSE` and outputs a HTML message based on the input.
+# Optional warning procedures may be supplied for the raw input string and parsed Maple expression.
 
-testmyexpression:=proc(EXPRESSION) local Message,Escaped_EXPRESSION,MessageTail,MATHML_EXPRESSION,syntax_error,RESPONSE; global common_function_names,common_operators;
+testmyexpression:=proc(EXPRESSION,{InputWarningProc::procedure := NULL,ResponseWarningProc::procedure := NULL,WarningStyle::string := "color:red;"}) local Message,Escaped_EXPRESSION,MessageTail,MATHML_EXPRESSION,syntax_error,RESPONSE,InputWarning,ResponseWarning,WarningStyleAttribute; global common_function_names,common_operators;
 
     # Save student expression as a HTML-escaped string.
     Escaped_EXPRESSION:=StringTools:-Escape(EXPRESSION,'html');
@@ -593,9 +594,26 @@ testmyexpression:=proc(EXPRESSION) local Message,Escaped_EXPRESSION,MessageTail,
     # End the message string with the output of `displayMapleVersionNumber`, to be concatenated at the end.
     MessageTail:=displayMapleVersionNumber(""):
 
+    # Prepare the HTML style for custom warning messages. Set WarningStyle="" to disable this styling.
+    WarningStyleAttribute:="";
+    if StringTools:-DeleteSpace(WarningStyle) <> "" then
+        WarningStyleAttribute:=cat(" style=\"",StringTools:-Escape(WarningStyle,'html'),"\"");
+    end if;
+
     # Return the message as-is if the student input is empty.
     if EXPRESSION="" then 
         return cat(Message,MessageTail);
+    end if;
+
+    # Add a custom warning about the raw input string if a warning procedure is supplied.
+    if type(InputWarningProc,procedure) then
+        try
+            InputWarning:=InputWarningProc(EXPRESSION);
+            if type(InputWarning,string) and StringTools:-DeleteSpace(InputWarning) <> "" then
+                Message:=cat(Message,"<p",WarningStyleAttribute,"><strong>Warning:</strong> ",StringTools:-Escape(InputWarning,'html'),"</p>");
+            end if;
+        catch:
+        end try;
     end if;
 
     # Otherwise, use a try-catch to attempt to parse the student input string. Broadly:
@@ -604,6 +622,17 @@ testmyexpression:=proc(EXPRESSION) local Message,Escaped_EXPRESSION,MessageTail,
     try
         # Check if expression can be parsed:
         RESPONSE := parse(EXPRESSION);
+
+        # Add a custom warning about the parsed input if a warning procedure is supplied.
+        if type(ResponseWarningProc,procedure) then
+            try
+                ResponseWarning:=ResponseWarningProc(RESPONSE);
+                if type(ResponseWarning,string) and StringTools:-DeleteSpace(ResponseWarning) <> "" then
+                    Message:=cat(Message,"<p",WarningStyleAttribute,"><strong>Warning:</strong> ",StringTools:-Escape(ResponseWarning,'html'),"</p>");
+                end if;
+            catch:
+            end try;
+        end if;
         
         # If it can, try to use create_MathML on it; if it fails, use MathML[ExportPresentation] instead.
         try
