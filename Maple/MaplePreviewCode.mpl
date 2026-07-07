@@ -81,17 +81,30 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     ## (Numerics and functions escaped separately.)
 
     ## a. Escape numerics:
-    # (Does not trigger if `Matrix` or `Vector` expressions detected, to avoid escaping indices or dimensions).
-    # - If "." detected after numeric, replace with "DECIMALDOT".
+    # This is done to prevent expression like 2^(3^4) evaluating.
+    # 
+    # This code does not trigger if `Matrix` or `Vector` expressions detected, to avoid escaping index labels or dimensions.
+    # This check could be avoided if a custom Matrix or Vector command overrides these with knowledge 
+    # of how to handle these escaped numerics.
+    #
+    # - If "." detected before of after numeric, replace with "DECIMALDOT".
+    #         (expression with mutltiple dots are normalised back to just ..)
     # - If numeric detected, concatenate "NUMBER" with numeric.
-    # - If letter precedes added "NUMBER", remove "NUMBER" (numeric in variables left alone, numeric after "DECIMALDOT" not treated as separate).
+    # - If letter or underscore precedes added "NUMBER", remove "NUMBER" as 
+    #         this is already part of a variable style name.
+    #         This also normalises DECIMALDOTNUMBER to just DECIMALDOT.
     if evalb(max(StringTools:-Search(["Matrix","Vector"],newEXPRESSION))=0) then
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)\\."="\\1DECIMALDOT",newEXPRESSION);
+        newEXPRESSION:=StringTools[RegSubs]("DECIMALDOT\\."="..",newEXPRESSION);
+
+        # Correct for cases where . is apparently being used as an operator between valid variables
+        newEXPRESSION:=StringTools[RegSubs]("([A-Za-z_])([0-9]+)DECIMALDOT"="\\1\\2.",newEXPRESSION);
+
         newEXPRESSION:=StringTools[RegSubs]("\\.([0-9]+)"="DECIMALDOT\\1",newEXPRESSION);
-        newEXPRESSION:=StringTools[RegSubs]("DECIMALDOTDECIMALDOT"="DECIMALDOT",newEXPRESSION);
+        newEXPRESSION:=StringTools[RegSubs]("\\.DECIMALDOT"="..",newEXPRESSION);
 
         newEXPRESSION:=StringTools[RegSubs]("([0-9]+)"="NUMBER\\1",newEXPRESSION);
-        newEXPRESSION:=StringTools[RegSubs]("([a-zA-Z])NUMBER"="\\1",newEXPRESSION)
+        newEXPRESSION:=StringTools[RegSubs]("([a-zA-Z_])NUMBER"="\\1",newEXPRESSION)
     end if;
     
     ## b. Escape functions:
