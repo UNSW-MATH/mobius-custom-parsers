@@ -186,8 +186,9 @@ create_MathML:=proc(EXPRESSION) local Message,newEXPRESSION,func_list,funcname,o
     Message:=StringTools:-SubstituteAll(Message,"%","");
     
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)</mi>"="<mn>\\1</mn>",Message);
-    Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT*([0-9]*)</mi>"="<mn>\\1.\\2</mn>",Message);
+    Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT([0-9]*)</mi>"="<mn>\\1.\\2</mn>",Message);
     Message:=StringTools[RegSubs]("<mi>NUMBER([0-9]+)DECIMALDOT</mi>"="<mn>\\1.</mn>",Message);
+    Message:=StringTools[RegSubs]("<mi>DECIMALDOT([0-9]+)</mi>"="<mn>.\\1</mn>",Message);
     Message:=StringTools[RegSubs]("<mn>NUMBER([0-9]+)</mn>"="<mn>\\1.</mn>",Message);
     Message:=StringTools[SubstituteAll](Message,"</mn><mo>&InvisibleTimes;</mo><mn>","</mn><mo>&times;</mo><mn>");
     
