@@ -138,6 +138,52 @@ add_syntax_advice_LIST :=
 ,"a^b^c"
 ];
 
+optional_keyword_arguments_LIST :=
+[
+    [
+        "ExpectedVariables accepts x",
+        "x^2+1",
+        "ExpectedVariables={x}",
+        [ExpectedVariables={x}]
+    ],
+    [
+        "ExpectedVariables warns about y",
+        "x^2+y",
+        "ExpectedVariables={x}",
+        [ExpectedVariables={x}]
+    ],
+    [
+        "ExpectedVariables warns about p",
+        "p1+p^2+p_3",
+        "ExpectedVariables={p1,p2,p3}",
+        [ExpectedVariables={p1,p2,p3}]
+    ],
+    [
+        "ExpectedVariables with custom warning style",
+        "x+y+z",
+        "ExpectedVariables={x}, WarningStyle=\"color:#2000b0;font-weight:bold;\"",
+        [ExpectedVariables={x}, WarningStyle="color:#2000b0;font-weight:bold;"]
+    ],
+    [
+        "InputWarningProc",
+        "x+1",
+        "InputWarningProc=proc(inputString) return \"Custom raw-input warning.\"; end proc",
+        [InputWarningProc=proc(inputString) return "Custom raw-input warning."; end proc]
+    ],
+    [
+        "ResponseWarningProc",
+        "x^2+1",
+        "ResponseWarningProc=proc(response) return \"Custom parsed-expression warning.\"; end proc",
+        [ResponseWarningProc=proc(response) return "Custom parsed-expression warning."; end proc]
+    ],
+    [
+        "Combined optional warnings",
+        "x+sin(y)",
+        "ExpectedVariables={x}, ResponseWarningProc=proc(response) return \"Custom parsed-expression warning.\"; end proc, WarningStyle=\"color:#078d07;\"",
+        [ExpectedVariables={x}, ResponseWarningProc=proc(response) return "Custom parsed-expression warning."; end proc, WarningStyle="color:#078d07;"]
+    ]
+];
+
 # Identify the HTML file to write to (the old version should be in the folder already, ready to be overwritten).
 writeto("HTML_examples.html");
 
@@ -186,6 +232,33 @@ printf("</p></details><details><summary><span style=\"font-size:1.5em; font-fami
 for expression_ in add_syntax_advice_LIST do
     Message:=testmyexpression(expression_):printf("%s",Message);printf("</p><hr><p>");
 end do:
+
+printf("</p></details><details><summary><span style=\"font-size:1.5em; font-family: Consolas, monospace;color: #8d0707\">optional keyword arguments</span>: <strong>Inputs call <code>testmyexpression</code> with extra keyword arguments.</strong><hr></summary>");
+printf("<table style=\"border-collapse: collapse; width:100%;\">");
+printf("<thead><tr>");
+printf("<th style=\"border:1px solid #888; padding:0.4em; text-align:left;\">Test</th>");
+printf("<th style=\"border:1px solid #888; padding:0.4em; text-align:left;\">Input</th>");
+printf("<th style=\"border:1px solid #888; padding:0.4em; text-align:left;\">Keyword arguments</th>");
+printf("</tr></thead><tbody>");
+
+# For each row, call the previewer with the keyword arguments stored in the fourth entry.
+for optional_keyword_arguments_ROW in optional_keyword_arguments_LIST do
+    test_label_:=optional_keyword_arguments_ROW[1]:
+    expression_:=optional_keyword_arguments_ROW[2]:
+    keyword_arguments_display_:=optional_keyword_arguments_ROW[3]:
+    keyword_arguments_:=optional_keyword_arguments_ROW[4]:
+
+    printf("<tr>");
+    printf("<td style=\"border:1px solid #888; padding:0.4em;\"><strong>%s</strong></td>",StringTools:-Escape(test_label_,'html'));
+    printf("<td style=\"border:1px solid #888; padding:0.4em;\"><code>%s</code></td>",StringTools:-Escape(expression_,'html'));
+    printf("<td style=\"border:1px solid #888; padding:0.4em;\"><code>%s</code></td>",StringTools:-Escape(keyword_arguments_display_,'html'));
+    printf("</tr>");
+    printf("<tr><td colspan=\"3\" style=\"border:1px solid #888; padding:0.4em;\">");
+    Message:=testmyexpression(expression_,op(keyword_arguments_)):printf("%s",Message);
+    printf("</td></tr>");
+end do:
+
+printf("</tbody></table></details><p>");
 
 # Add HTML postscript:
 printf("</p>");

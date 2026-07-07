@@ -584,7 +584,29 @@ end proc;
 # It takes the student's  `$RESPONSE` and outputs a HTML message based on the input.
 # Optional warning procedures may be supplied for the raw input string and parsed Maple expression.
 
-testmyexpression:=proc(EXPRESSION,{InputWarningProc::procedure := NULL,ResponseWarningProc::procedure := NULL,WarningStyle::string := "color:red;"}) local Message,Escaped_EXPRESSION,MessageTail,MATHML_EXPRESSION,syntax_error,RESPONSE,InputWarning,ResponseWarning,WarningStyleAttribute; global common_function_names,common_operators;
+testmyexpression:=proc(
+    EXPRESSION,
+    {
+        InputWarningProc::procedure := NULL,
+        ResponseWarningProc::procedure := NULL,
+        ExpectedVariables::set := NULL,
+        WarningStyle::string := "color:red;"
+    }
+)
+local
+    Message,
+    Escaped_EXPRESSION,
+    MessageTail,
+    MATHML_EXPRESSION,
+    syntax_error,
+    RESPONSE,
+    InputWarning,
+    ResponseWarning,
+    WarningStyleAttribute,
+    UnexpectedVariables;
+global
+    common_function_names,
+    common_operators;
 
     # Save student expression as a HTML-escaped string.
     Escaped_EXPRESSION:=StringTools:-Escape(EXPRESSION,'html');
@@ -622,6 +644,14 @@ testmyexpression:=proc(EXPRESSION,{InputWarningProc::procedure := NULL,ResponseW
     try
         # Check if expression can be parsed:
         RESPONSE := parse(EXPRESSION);
+
+        # If an expected variable set is supplied, warn about any variables outside it.
+        if type(ExpectedVariables,set) then
+            UnexpectedVariables:=indets([RESPONSE],name) minus ExpectedVariables;
+            if nops(UnexpectedVariables)>0 then
+                Message:=cat(Message,"<p",WarningStyleAttribute,"><strong>Warning:</strong> Your expression contains unexpected variable(s): ",StringTools:-Escape(sprintf("%a",UnexpectedVariables),'html'),".</p>");
+            end if;
+        end if;
 
         # Add a custom warning about the parsed input if a warning procedure is supplied.
         if type(ResponseWarningProc,procedure) then
