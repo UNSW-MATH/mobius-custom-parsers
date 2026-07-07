@@ -1,0 +1,176 @@
+# This *.mpl file compares a saved previewer expected-output snapshot with the latest MapleCustomPreviewer.mla.
+#
+# Typical local use:
+#   maple -q
+#   read("ComparePreviewerExpectedOutputs.mpl"):
+#   ComparePreviewerExpectedOutputs("testing/PreviewerExpectedOutputs_1_0_5_warning_proc_test.mpl"):
+#
+# Or, as a one-off shell command from this directory:
+#   ./run_compare.sh PreviewerExpectedOutputs_1_0_5_warning_proc_test.mpl
+
+# Include the latest version of the Maple previewer library.
+libname := libname,"MapleCustomPreviewer.mla";
+
+# Suppress most output:
+interface(quiet=true);
+
+# These may be assigned before reading this file.
+if not assigned('ComparePreviewerExpectedOutputsFilename') then
+    ComparePreviewerExpectedOutputsFilename := NULL:
+end if:
+
+if not assigned('ComparePreviewerComparisonFilename') then
+    ComparePreviewerComparisonFilename := NULL:
+end if:
+
+PreviewerComparisonVersionName := proc(versionString) local versionName;
+    versionName:=versionString;
+    versionName:=StringTools:-RegSubs("[ .]" = "_",versionName);
+    versionName:=StringTools:-RegSubs("[^A-Za-z0-9_-]" = "",versionName);
+    return versionName;
+end proc:
+
+PreviewerComparisonHTMLEscape := proc(inputString);
+    return StringTools:-Escape(inputString,'html');
+end proc:
+
+PreviewerComparisonSnapshotString := proc(snapshotValue,fieldName,exampleNumber);
+    if type(snapshotValue,string) then
+        return snapshotValue;
+    end if;
+
+    error "Expected %1 for example %2 to be stored as a string, but found %3",fieldName,exampleNumber,whattype(snapshotValue);
+end proc:
+
+PreviewerComparisonDefaultOutputFilename := proc(expectedVersion,currentVersion)
+    return cat(
+        "testing/PreviewerComparison_",
+        PreviewerComparisonVersionName(expectedVersion),
+        "_against_",
+        PreviewerComparisonVersionName(currentVersion),
+        ".html"
+    );
+end proc:
+
+ComparePreviewerExpectedOutputs := proc(expectedOutputsFilename,{OutputFilename := NULL}) local outputFilename,currentVersion,expectedVersion,totalCount,changedExamples,ii,exampleRecord,suiteName,inputString,expectedOutput,actualOutput,changedRecord;
+    global PreviewerExpectedOutputs,PreviewerExpectedOutputsVersion,PreviewerExpectedOutputsGeneratedAt;
+
+    if expectedOutputsFilename = NULL or not type(expectedOutputsFilename,string) or expectedOutputsFilename = "" then
+        error "Set ComparePreviewerExpectedOutputsFilename to an expected-output snapshot filename before reading this file.";
+    end if;
+
+    if not FileTools:-Exists(expectedOutputsFilename) then
+        error "Expected-output snapshot %1 does not exist.",expectedOutputsFilename;
+    end if;
+
+    PreviewerExpectedOutputs:='PreviewerExpectedOutputs':
+    PreviewerExpectedOutputsVersion:='PreviewerExpectedOutputsVersion':
+    PreviewerExpectedOutputsGeneratedAt:='PreviewerExpectedOutputsGeneratedAt':
+
+    read(expectedOutputsFilename);
+
+    if not assigned('PreviewerExpectedOutputs') then
+        error "Expected-output snapshot %1 did not define PreviewerExpectedOutputs.",expectedOutputsFilename;
+    end if;
+
+    if not assigned('PreviewerExpectedOutputsVersion') then
+        PreviewerExpectedOutputsVersion := "unknown":
+    end if:
+
+    currentVersion:=MaplePreviewerVersion();
+    expectedVersion:=PreviewerExpectedOutputsVersion;
+
+    if OutputFilename = NULL then
+        if not FileTools:-Exists("testing") then
+            FileTools:-MakeDirectory("testing");
+        end if;
+
+        outputFilename:=PreviewerComparisonDefaultOutputFilename(expectedVersion,currentVersion);
+    else
+        outputFilename:=OutputFilename;
+    end if;
+
+    totalCount:=nops(PreviewerExpectedOutputs);
+    changedExamples:=[];
+
+    for ii to totalCount do
+        exampleRecord:=PreviewerExpectedOutputs[ii];
+        if nops(exampleRecord) <> 3 then
+            error "Expected example %1 to have the form [suite_name, input_string, expected_output_string].",ii;
+        end if;
+
+        suiteName:=PreviewerComparisonSnapshotString(exampleRecord[1],"suite_name",ii);
+        inputString:=PreviewerComparisonSnapshotString(exampleRecord[2],"input_string",ii);
+        expectedOutput:=PreviewerComparisonSnapshotString(exampleRecord[3],"expected_output_string",ii);
+        actualOutput:=testmyexpression(inputString);
+
+        if actualOutput <> expectedOutput then
+            changedRecord:=[ii,suiteName,inputString,expectedOutput,actualOutput];
+            changedExamples:=[op(changedExamples),changedRecord];
+        end if;
+    end do;
+
+    writeto(outputFilename);
+    printf("<!DOCTYPE html>\n");
+    printf("<html>\n");
+    printf("<head>\n");
+    printf("  <meta charset=\"utf-8\">\n");
+    printf("  <title>Maple Previewer Comparison</title>\n");
+    printf("  <script>window.MathJax = { MathML: { extensions: [\"mml3.js\", \"content-mathml.js\"]}};</script>\n");
+    printf("  <script type=\"text/javascript\" async src=\"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=MML_HTMLorMML\"></script>\n");
+    printf("  <style>\n");
+    printf("    body { font-family: Arial, sans-serif; margin: 24px; color: #222; }\n");
+    printf("    h1 { font-size: 1.7em; margin-bottom: 0.2em; }\n");
+    printf("    code, pre { font-family: Consolas, monospace; }\n");
+    printf("    .summary { margin: 16px 0 24px; padding: 12px; border-left: 4px solid #8d0707; background: #fff4f4; }\n");
+    printf("    .example { border-top: 1px solid #bbb; padding: 18px 0; }\n");
+    printf("    .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }\n");
+    printf("    .panel { border: 1px solid #ccc; padding: 12px; overflow-x: auto; }\n");
+    printf("    .panel h3 { margin-top: 0; }\n");
+    printf("    pre { white-space: pre-wrap; overflow-x: auto; background: #f7f7f7; padding: 8px; }\n");
+    printf("    @media (max-width: 900px) { .comparison-grid { grid-template-columns: 1fr; } }\n");
+    printf("  </style>\n");
+    printf("</head>\n");
+    printf("<body>\n");
+    printf("<h1>Maple Previewer Comparison</h1>\n");
+    printf("<div class=\"summary\">\n");
+    printf("<p><strong>Expected-output snapshot:</strong> <code>%s</code></p>\n",PreviewerComparisonHTMLEscape(expectedOutputsFilename));
+    printf("<p><strong>Expected version:</strong> %s</p>\n",PreviewerComparisonHTMLEscape(expectedVersion));
+    printf("<p><strong>Latest library version:</strong> %s</p>\n",PreviewerComparisonHTMLEscape(currentVersion));
+    printf("<p><strong>Changed examples:</strong> %d of %d</p>\n",nops(changedExamples),totalCount);
+    printf("</div>\n");
+
+    if nops(changedExamples) = 0 then
+        printf("<p>No changed examples found.</p>\n");
+    else
+        for changedRecord in changedExamples do
+            printf("<div class=\"example\">\n");
+            printf("<h2>Example %d: %s</h2>\n",changedRecord[1],PreviewerComparisonHTMLEscape(changedRecord[2]));
+            printf("<p><strong>Input:</strong> <code>%s</code></p>\n",PreviewerComparisonHTMLEscape(changedRecord[3]));
+            printf("<div class=\"comparison-grid\">\n");
+            printf("<div class=\"panel\"><h3>Expected</h3>%s</div>\n",changedRecord[4]);
+            printf("<div class=\"panel\"><h3>Actual</h3>%s</div>\n",changedRecord[5]);
+            printf("</div>\n");
+            printf("<details><summary>Raw expected HTML</summary><pre>%s</pre></details>\n",PreviewerComparisonHTMLEscape(changedRecord[4]));
+            printf("<details><summary>Raw actual HTML</summary><pre>%s</pre></details>\n",PreviewerComparisonHTMLEscape(changedRecord[5]));
+            printf("</div>\n");
+        end do;
+    end if;
+
+    printf("</body>\n");
+    printf("</html>\n");
+    writeto(terminal);
+
+    printf("%d of %d examples changed.\n",nops(changedExamples),totalCount);
+    printf("Comparison HTML written to %s\n",outputFilename);
+
+    return changedExamples;
+end proc:
+
+if ComparePreviewerExpectedOutputsFilename = NULL or not type(ComparePreviewerExpectedOutputsFilename,string) or ComparePreviewerExpectedOutputsFilename = "" then
+    NULL:
+elif ComparePreviewerComparisonFilename = NULL then
+    ComparePreviewerExpectedOutputs(ComparePreviewerExpectedOutputsFilename):
+else
+    ComparePreviewerExpectedOutputs(ComparePreviewerExpectedOutputsFilename,OutputFilename=ComparePreviewerComparisonFilename):
+end if:
