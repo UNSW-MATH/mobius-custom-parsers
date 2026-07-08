@@ -34,6 +34,11 @@ PreviewerComparisonHTMLEscape := proc(inputString);
     return StringTools:-Escape(inputString,'html');
 end proc:
 
+PreviewerComparisonNormalizeOutput := proc(outputString) local previewerSignaturePattern;
+    previewerSignaturePattern := "<p[^>]*>UNSW M&ouml;bius Custom Previewer v[^<]*</p>";
+    return StringTools:-RegSubs(previewerSignaturePattern = "",outputString);
+end proc:
+
 PreviewerComparisonSnapshotString := proc(snapshotValue,fieldName,exampleNumber);
     if type(snapshotValue,string) then
         return snapshotValue;
@@ -52,8 +57,28 @@ PreviewerComparisonDefaultOutputFilename := proc(expectedVersion,currentVersion)
     );
 end proc:
 
-ComparePreviewerExpectedOutputs := proc(expectedOutputsFilename,{OutputFilename := NULL}) local outputFilename,currentVersion,expectedVersion,totalCount,changedExamples,ii,exampleRecord,suiteName,inputString,expectedOutput,actualOutput,changedRecord;
-    global PreviewerExpectedOutputs,PreviewerExpectedOutputsVersion,PreviewerExpectedOutputsGeneratedAt;
+ComparePreviewerExpectedOutputs := proc(
+    expectedOutputsFilename,
+    {OutputFilename := NULL}
+) local
+    outputFilename,
+    currentVersion,
+    expectedVersion,
+    totalCount,
+    changedExamples,
+    ii,
+    exampleRecord,
+    suiteName,
+    inputString,
+    expectedOutput,
+    actualOutput,
+    normalizedExpectedOutput,
+    normalizedActualOutput,
+    changedRecord;
+    global
+        PreviewerExpectedOutputs,
+        PreviewerExpectedOutputsVersion,
+        PreviewerExpectedOutputsGeneratedAt;
 
     if expectedOutputsFilename = NULL or not type(expectedOutputsFilename,string) or expectedOutputsFilename = "" then
         error "Set ComparePreviewerExpectedOutputsFilename to an expected-output snapshot filename before reading this file.";
@@ -103,9 +128,19 @@ ComparePreviewerExpectedOutputs := proc(expectedOutputsFilename,{OutputFilename 
         inputString:=PreviewerComparisonSnapshotString(exampleRecord[2],"input_string",ii);
         expectedOutput:=PreviewerComparisonSnapshotString(exampleRecord[3],"expected_output_string",ii);
         actualOutput:=testmyexpression(inputString);
+        normalizedExpectedOutput:=PreviewerComparisonNormalizeOutput(expectedOutput);
+        normalizedActualOutput:=PreviewerComparisonNormalizeOutput(actualOutput);
 
-        if actualOutput <> expectedOutput then
-            changedRecord:=[ii,suiteName,inputString,expectedOutput,actualOutput];
+        if normalizedActualOutput <> normalizedExpectedOutput then
+            changedRecord:=[
+                ii,
+                suiteName,
+                inputString,
+                expectedOutput,
+                actualOutput,
+                normalizedExpectedOutput,
+                normalizedActualOutput
+            ];
             changedExamples:=[op(changedExamples),changedRecord];
         end if;
     end do;
@@ -137,6 +172,7 @@ ComparePreviewerExpectedOutputs := proc(expectedOutputsFilename,{OutputFilename 
     printf("<p><strong>Expected-output snapshot:</strong> <code>%s</code></p>\n",PreviewerComparisonHTMLEscape(expectedOutputsFilename));
     printf("<p><strong>Expected version:</strong> %s</p>\n",PreviewerComparisonHTMLEscape(expectedVersion));
     printf("<p><strong>Latest library version:</strong> %s</p>\n",PreviewerComparisonHTMLEscape(currentVersion));
+    printf("<p><strong>Normalization:</strong> Previewer version/contact footer omitted.</p>\n");
     printf("<p><strong>Changed examples:</strong> %d of %d</p>\n",nops(changedExamples),totalCount);
     printf("</div>\n");
 
@@ -151,8 +187,8 @@ ComparePreviewerExpectedOutputs := proc(expectedOutputsFilename,{OutputFilename 
             printf("<div class=\"panel\"><h3>Expected</h3>%s</div>\n",changedRecord[4]);
             printf("<div class=\"panel\"><h3>Actual</h3>%s</div>\n",changedRecord[5]);
             printf("</div>\n");
-            printf("<details><summary>Raw expected HTML</summary><pre>%s</pre></details>\n",PreviewerComparisonHTMLEscape(changedRecord[4]));
-            printf("<details><summary>Raw actual HTML</summary><pre>%s</pre></details>\n",PreviewerComparisonHTMLEscape(changedRecord[5]));
+            printf("<details><summary>Normalised expected HTML</summary><pre>%s</pre></details>\n",PreviewerComparisonHTMLEscape(changedRecord[6]));
+            printf("<details><summary>Normalised actual HTML</summary><pre>%s</pre></details>\n",PreviewerComparisonHTMLEscape(changedRecord[7]));
             printf("</div>\n");
         end do;
     end if;
