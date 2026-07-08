@@ -12,3 +12,6 @@
 # Ignore screenshots
 *.png
 *.jpg
+
+# Ignore testing directories
+*/testing/
