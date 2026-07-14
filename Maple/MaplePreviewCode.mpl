@@ -20,7 +20,7 @@
 
 ## The version number is updated manually below:
 
-MaplePreviewerVersion := proc() return "1.0.5 (beta)" end proc;
+MaplePreviewerVersion := proc() return "1.0.5 (code change tests)" end proc;
 
 #####################################################################
 #                                                                   #
@@ -213,7 +213,27 @@ end proc;
 # The following proc takes the student input string and a partially built HTML message string, and adds advice to the message string where it finds potential issues in the input string.
 # This proc is only called if the string returns no Maple errors.
 
-add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Message,RESPONSE,hasBadInfinity,hasBadMult,func_name,regex_literal_op,regex_expression,_op; global common_function_names, common_operators, common_regex_literal_operators;
+add_semantic_advice:=proc(
+    EXPRESSION,
+    InputMessage,
+    {
+        ExpectedVariables::set := NULL
+    }
+) 
+local 
+    m0,m1,m2,m3,m4,m5,m6,
+    Message,
+    RESPONSE,
+    hasBadInfinity,
+    hasBadMult,
+    func_name,
+    regex_literal_op,
+    regex_expression,
+    _op; 
+global 
+    common_function_names,
+    common_operators,
+    common_regex_literal_operators;
 
     # Save the HTML message string, ready to append feedback for students.
     Message:=InputMessage;
@@ -324,6 +344,8 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
     HBM_FUNC_HAS_COMMON_SUBSTRING   := 5: # a function name contains common function name as a strict substring e.g. `xsin`
     HBM_FUNC_HAS_GREEK_SUBSTRING    := 6: # a function name contains a Greek letter as a strict substring e.g. `nGamma`
     HBM_FUNC_HAS_ADJACENT_LETTERS   := 7: # a function name contains at least two adjacent letters and is none of cases 5-6 e.g. `xf` or `th`
+
+    HBM_VAR_HAS_COMMON_VARIABLE_SUBSTRING := 8 ; # A variable has a substring that is a expected varaible for this problem.
     # In cases 1-7 above, two additional outputs are given
     # - the Greek letter or common function name compared to the offending indet (where possible, otherwise ""), and
     # - the indet in the student input which triggered hasBadMult.
@@ -347,16 +369,25 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
 
     # This subproc parses the input string, isolates indeterminate terms, and checks the terms as strings
     # for spelling against common functions and Greek letters.
-    HBM_MATCH_COMMON := 1:
-    HBM_MATCH_GREEK := 2:
+    HBM_MATCH_COMMON   := 1:
+    HBM_MATCH_GREEK    := 2:
+    HBM_MATCH_EXPECTED := 3:
 
     # Combine common function names and Greek letters into one length-sorted list.
     # Each entry is [length, label, tag], which lets us match the longest tag first.
+    if type(ExpectedVariables,set) then
+            HBM_EXPECTED_VARIABLES := convert(map(convert,ExpectedVariables,string),list);
+        else
+            HBM_EXPECTED_VARIABLES := [];
+    end if:
+
     HBM_MATCH_TAGS :=
         [   seq([length(name), HBM_MATCH_COMMON, name],
                 name in [op(common_function_names), op(HBM_SPECIAL_NAMES)])
         ,   seq([length(name), HBM_MATCH_GREEK, name],
                 name in HBM_GREEK_LETTERS)
+        ,   seq([length(name), HBM_MATCH_EXPECTED , name],
+                name in HBM_EXPECTED_VARIABLES)
         ]:
 
     # This helper returns the longest matching tag, together with a label and a flag
@@ -406,6 +437,13 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
                         v_flag := 1;
                     else
                         return HBM_VAR_HAS_GREEK_SUBSTRING, tag_name, vList[i];
+                    end if;
+
+                elif tag_type = HBM_MATCH_EXPECTED then
+                    if exact_match then
+                        v_flag := 1;
+                    else
+                        return HBM_VAR_HAS_COMMON_VARIABLE_SUBSTRING, tag_name, vList[i];
                     end if;
                 end if;
 
@@ -500,6 +538,15 @@ add_semantic_advice:=proc(EXPRESSION,InputMessage) local m0,m1,m2,m3,m4,m5,m6,Me
                 "<p><strong>Advice:</strong> Your expression contains the function &quot;", m6[3],
                 "&quot;\; is this a typo (missing *)?</p>"
             );
+
+        elif code = HBM_VAR_HAS_COMMON_VARIABLE_SUBSTRING then
+            return cat(
+                "<p><strong>Advice:</strong> Your expression contains the variable &quot;", m6[3],
+                "&quot;, which contains the substring &quot;", m6[2],
+                "&quot;. Is this a typo (missing parentheses and/or *)?</p>"
+            );
+
+
         end if;
 
         return "";
@@ -601,7 +648,7 @@ end proc;
 testmyexpression:=proc(
     EXPRESSION,
     {
-        InputWarningProc::procedure := NULL,
+        RawInputWarningProc::procedure := NULL,
         ResponseWarningProc::procedure := NULL,
         ExpectedVariables::set := NULL,
         WarningStyle::string := "color:red;"
@@ -617,7 +664,8 @@ local
     InputWarning,
     ResponseWarning,
     WarningStyleAttribute,
-    UnexpectedVariables;
+    UnexpectedVariables,
+    opts;
 global
     common_function_names,
     common_operators;
@@ -642,9 +690,9 @@ global
     end if;
 
     # Add a custom warning about the raw input string if a warning procedure is supplied.
-    if type(InputWarningProc,procedure) then
+    if type(RawInputWarningProc,procedure) then
         try
-            InputWarning:=InputWarningProc(EXPRESSION);
+            InputWarning:=RawInputWarningProc(EXPRESSION);
             if type(InputWarning,string) and StringTools:-DeleteSpace(InputWarning) <> "" then
                 Message:=cat(Message,"<p",WarningStyleAttribute,"><strong>Warning:</strong> ",StringTools:-Escape(InputWarning,'html'),"</p>");
             end if;
@@ -699,16 +747,21 @@ global
         end try;
 
         # Add output of add_semantic_advice to Message.
+        opts:=NULL;
+        if type(ExpectedVariables,set) then
+            opts:=opts,':-ExpectedVariables'=ExpectedVariables;
+        end if:
+
 
         if evalb(max(StringTools:-Search(["->"],EXPRESSION))>0) then
             StringTools:-Substitute(EXPRESSION,"->","#");
             # Split string into two using marker "#".
             StringTools:-Split(%,"#");
             # Use add_semantic_advice on both halves of the string, with a \mapsto in the middle, and append to Message.
-            Message := add_semantic_advice(%[1],Message);
-            Message := add_semantic_advice(%%[2],Message)
+            Message := add_semantic_advice( %[1],Message,opts);
+            Message := add_semantic_advice(%%[2],Message,opts)
         else
-            Message:=add_semantic_advice(EXPRESSION,Message)
+            Message:=add_semantic_advice(EXPRESSION,Message,opts)
         end if;
 
         # Conclude by concatenating the output of displayMapleVersionNumber to Message.

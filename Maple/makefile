@@ -15,6 +15,10 @@ endif
 	$(CMAPLE) MaplePreviewCode.mpl > /dev/null
 	$(CMAPLE) TestingThePreviewer.mpl > /dev/null
 
+.PHONY verbose: superclean
+	$(CMAPLE) MaplePreviewCode.mpl
+	$(CMAPLE) TestingThePreviewer.mpl
+
 superclean:
 	rm -f *.mla
 

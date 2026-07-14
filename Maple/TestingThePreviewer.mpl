@@ -15,7 +15,15 @@ interface(quiet=true);
 
 quick_LIST := 
 [
-""
+"int(x^2,x=0. .. .2)",
+"a1.a2",
+"1.2",
+"1 . 2",
+"[2(x)+1(x),1..1]",
+"[int(x,x=1..1),p_1]",
+"1/sqrt(2)",
+"sqrt(201)(x)",
+"sqrt(y+1)(x)"
 ];
 
 create_MathML_LIST:=
@@ -90,6 +98,7 @@ add_semantic_advice_LIST :=
 ,"<1,1 ; 2 ,2 >"
 ,"<1,1*2/(3*3) ; 2 ,2 >"
 ,"[exp^x,sin-x,ln*x,cosh+1]"
+,"x->x^2"
 ,"x->x^2;"
 ,"2*e+7*b+3*e"
 ,"e^x"
@@ -147,10 +156,28 @@ optional_keyword_arguments_LIST :=
         [ExpectedVariables={x}]
     ],
     [
+        "ExpectedVariables accepts x",
+        "xx^2+1",
+        "ExpectedVariables={x}",
+        [ExpectedVariables={x}]
+    ],
+    [
         "ExpectedVariables warns about y",
         "x^2+y",
         "ExpectedVariables={x}",
         [ExpectedVariables={x}]
+    ],
+    [
+        "ExpectedVariables warns about y",
+        "None",
+        "ExpectedVariables={None,none}",
+        [ExpectedVariables={None,none}]
+    ],
+    [
+        "ExpectedVariables warns about y",
+        "Noney",
+        "ExpectedVariables={None,none}",
+        [ExpectedVariables={None,none}]
     ],
     [
         "ExpectedVariables warns about p",
@@ -165,10 +192,10 @@ optional_keyword_arguments_LIST :=
         [ExpectedVariables={x}, WarningStyle="color:#2000b0;font-weight:bold;"]
     ],
     [
-        "InputWarningProc",
+        "RawInputWarningProc",
         "x+1",
-        "InputWarningProc=proc(inputString) return \"Custom raw-input warning.\"; end proc",
-        [InputWarningProc=proc(inputString) return "Custom raw-input warning."; end proc]
+        "RawInputWarningProc=proc(inputString) return \"Custom raw-input warning.\"; end proc",
+        [RawInputWarningProc=proc(inputString) return "Custom raw-input warning."; end proc]
     ],
     [
         "ResponseWarningProc",
