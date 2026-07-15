@@ -14,12 +14,11 @@ endif
 .PHONY all: superclean
 	$(CMAPLE) MaplePreviewCode.mpl > /dev/null
 	$(CMAPLE) TestingThePreviewer.mpl > /dev/null
-	
-	for library in *.lib; do echo $$library ;make "$${library%.lib}".zip; done
 
-%.zip: %.ind %.lib
-	zip "$*.zip" "$*.ind" "$*.lib"
+.PHONY verbose: superclean
+	$(CMAPLE) MaplePreviewCode.mpl
+	$(CMAPLE) TestingThePreviewer.mpl
 
 superclean:
-	rm -f *.ind *.lib *.zip
+	rm -f *.mla
 
