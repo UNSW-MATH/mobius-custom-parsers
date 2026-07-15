@@ -20,7 +20,7 @@
 
 ## The version number is updated manually below:
 
-MaplePreviewerVersion := proc() return "1.0.5 (code change tests)" end proc;
+MaplePreviewerVersion := proc() return "1.0.5 (beta)" end proc;
 
 #####################################################################
 #                                                                   #
@@ -709,7 +709,7 @@ global
 
         # If an expected variable set is supplied, warn about any variables outside it.
         if type(ExpectedVariables,set) then
-            UnexpectedVariables:=indets([RESPONSE],name) minus ExpectedVariables;
+            UnexpectedVariables:=indets([RESPONSE],name) minus ExpectedVariables minus {constants};
             if nops(UnexpectedVariables)>0 then
                 Message:=cat(Message,"<p",WarningStyleAttribute,"><strong>Warning:</strong> Your expression contains unexpected variable(s): ",StringTools:-Escape(sprintf("%a",UnexpectedVariables),'html'),".</p>");
             end if;

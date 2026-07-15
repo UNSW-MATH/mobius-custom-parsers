@@ -151,7 +151,7 @@ optional_keyword_arguments_LIST :=
 [
     [
         "ExpectedVariables accepts x",
-        "x^2+1",
+        "x^2+Pi",
         "ExpectedVariables={x}",
         [ExpectedVariables={x}]
     ],
