@@ -20,7 +20,7 @@
 
 ## The version number is updated manually below:
 
-MaplePreviewerVersion := proc() return "1.0.5 (beta)" end proc;
+MaplePreviewerVersion := proc() return "1.0.5" end proc;
 
 #####################################################################
 #                                                                   #
@@ -53,7 +53,7 @@ common_function_names :=
 
     ,"GAMMA","erf","Li","Ei"
     ,"hypergeom","binomial"
-    ,"conjugate"];
+    ,"conjugate","factorial"];
 
 common_operators := ["*","-","+","*","^"];
 
