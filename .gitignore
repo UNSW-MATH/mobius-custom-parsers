@@ -1,6 +1,7 @@
 # Ignore Library files
 *.ind
 *.lib
+*.mla
 *.zip
 
 # Ignore maple worksheets and html
