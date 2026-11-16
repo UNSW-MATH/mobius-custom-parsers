@@ -43,3 +43,22 @@ Custom Previewing Code:
 
     Message:=testmyexpression("$RESPONSE"); 
     printf("%s",Message);
+
+## Testing output and Comparing saved previewer output
+
+`TestingThePreviewer.mpl` contains the example inputs used for the previewer sanity checks. Its suites cover quick checks, MathML creation, semantic advice, and syntax advice. Running the file creates `HTML_examples.html`, a page showing the previewed examples, and saves their output as a versioned snapshot in `testing/PreviewerExpectedOutputs_<version>.mpl`.
+
+Snapshots are a useful for checking changes to the previewer. By default a new snapshot is created when previewer test are run, to disable this set `SaveExpectedOutputs := false` in `TestingThePreviewer.mpl`. The snapshot records the previewer version and generation time, plus each suite name, input string, and generated HTML. Pre-existing snapshots are protected, meaning that saving fails if the target file already exists. This can be overwridden by setting `OverwriteExpectedOutputs := true`, but it is safer just to delete this snapshot to avoid accidentally overwritting this in the future.
+
+To compare a snapshot against the current `MapleCustomPreviewer.mla`, run the script `./run_compare` from any directory, for example
+
+    ./run_compare.sh testing/PreviewerExpectedOutputs_1_0_5.mpl
+
+The script runs from the `Maple` directory and looks for a file under `Maple/testing/`. You can also pass a path, for example `./Maple/run_compare.sh testing/PreviewerExpectedOutputs_1_0_6.mpl` when already in `Maple`. The software Maple must be installed and available as `maple` on `PATH`.
+
+For interactive use from the `Maple` directory, the equivalent Maple commands are:
+
+    read("ComparePreviewerExpectedOutputs.mpl"):
+    ComparePreviewerExpectedOutputs("testing/PreviewerExpectedOutputs_1_0_6.mpl"):
+
+The comparison command loads the latest previewer library, reads each saved input through `testmyexpression`, and writes an HTML report. By default the report is named `testing/PreviewerComparison_<expected-version>_against_<current-version>.html`. Set `OutputFilename="path/to/report.html"` to choose another path. The report summarizes the changed examples and includes the expected and current HTML for inspection. It compares exact generated output after removing the embedded previewer version signature, since that signature is expected to differ when versions change. 
